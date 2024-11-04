@@ -1,0 +1,11 @@
+* text=auto
+
+*.cpp text
+*.h text
+*.cmake text
+CMakeLists.txt text
+.editorconfig text
+.gitattributes text
+.gitignore text
+
+kernel/font.psf binary
