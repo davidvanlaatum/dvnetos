@@ -14,11 +14,12 @@ jobs:
     env:
       BUILD_TYPE: Debug
       CMAKE_COLOR_DIAGNOSTICS: ON
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         clang: [ON, OFF]
+        os: [ubuntu-24.04, ubuntu-24.04-arm64]
     steps:
       - uses: actions/checkout@v4
       - name: Set environment variable
@@ -43,12 +44,13 @@ jobs:
     env:
       BUILD_TYPE: Debug
       CMAKE_COLOR_DIAGNOSTICS: ON
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         arch: [aarch64, x86_64]
         clang: [ON, OFF]
+        os: [ubuntu-24.04, ubuntu-24.04-arm64]
     steps:
       - uses: actions/checkout@v4
       - name: Set environment variable
