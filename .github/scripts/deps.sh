@@ -6,7 +6,7 @@ env
 
 apt update
 apt remove clang-16 clang-17
-PACKAGES="libc++-dev ninja-build python3-venv gcc-arm-none-eabi gcc-x86-64-linux-gnu"
+PACKAGES="libc++-dev ninja-build python3-venv gcc-arm-none-eabi gcc-x86-64-linux-gnu valgrind"
 if [[ $MATRIX_CLANG == "ON" ]]; then
     PACKAGES="${PACKAGES} clang lld libclang-dev"
 fi
