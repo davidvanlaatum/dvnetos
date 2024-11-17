@@ -121,3 +121,5 @@ Temporary Items
 
 cmake-build-*
 .git
+Dockerfile.test
+.dockerignore

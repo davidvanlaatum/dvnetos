@@ -106,7 +106,7 @@ namespace framebuffer {
         cursorX = 0;
         cursorY++;
         if (cursorY >= lineCount) {
-          strncpy(buffer, buffer + lineLength, lineLength * (lineCount - 1));
+          memmove(buffer, buffer + lineLength, lineLength * (lineCount - 1));
           memset(buffer + lineLength * (lineCount - 1), ' ', lineLength);
           cursorY--;
         }
