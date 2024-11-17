@@ -15,8 +15,8 @@ jobs:
       BUILD_TYPE: Debug
       CMAKE_COLOR_DIAGNOSTICS: ON
     runs-on: ubuntu-24.04
-    fail-fast: false
     strategy:
+      fail-fast: false
       matrix:
         clang: [ON, OFF]
     steps:
@@ -44,8 +44,8 @@ jobs:
       BUILD_TYPE: Debug
       CMAKE_COLOR_DIAGNOSTICS: ON
     runs-on: ubuntu-24.04
-    fail-fast: false
     strategy:
+      fail-fast: false
       matrix:
         arch: [aarch64, x86_64]
         clang: [ON, OFF]
