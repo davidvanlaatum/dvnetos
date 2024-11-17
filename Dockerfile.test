@@ -1,0 +1,12 @@
+FROM ubuntu:latest
+RUN apt update && apt install -y cmake clang lld libclang-dev libc++-dev
+RUN apt install -y gdisk mtools git python3-venv
+RUN mkdir -p /app/build
+COPY . /app
+WORKDIR /app/build
+RUN cmake .. -DTEST_MODE=ON -DCMAKE_BUILD_TYPE=Debug && cmake --build . && ctest
+RUN for arch in $(find kernel/arch -maxdepth 1 -mindepth 1 -not -name CMakeLists.txt -exec basename {} \;); do \
+    mkdir -p /app/build-$arch && cd /app/build-$arch && \
+    cmake .. -DCMAKE_BUILD_TYPE=Debug -DARCH=$arch && \
+    cmake --build .; \
+done

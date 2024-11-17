@@ -1,4 +1,4 @@
-#include "/Users/david/CLionProjects/dvnetos/kernel/smbios/smbios.h"
+#include "smbios.h"
 
 namespace smbios {
 const char *toString(TableType value);

@@ -9,8 +9,8 @@ if (TEST_MODE)
   include(configure-test)
   add_executable(framebuffer_test
       framebuffer_test.cpp
-      framebuffer.h
-      framebuffer.cpp
+      Framebuffer.h
+      Framebuffer.cpp
       VirtualConsole.cpp
       VirtualConsole.h
   )
@@ -35,8 +35,8 @@ if (TEST_MODE)
   configure_test(framebuffer_test)
 else ()
   target_sources(kernel PRIVATE
-      framebuffer.h
-      framebuffer.cpp
+      Framebuffer.h
+      Framebuffer.cpp
       VirtualConsole.cpp
       VirtualConsole.h
   )

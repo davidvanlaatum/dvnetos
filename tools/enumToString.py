@@ -60,13 +60,18 @@ def generate_to_string_function(header_file, output_file, output_header, parse_a
       out_file.write('    }\n')
       out_file.write('}\n\n')
 
-  with open(output_file, 'w') as out_file, open(output_header, 'w') as out_header:
-    out_file.write('#include <cstdio>\n')
-    out_file.write(f'#include "{header_file}"\n\n')
-    out_header.write(f'#include "{header_file}"\n\n')
-    namespace_stack = []
-    for cursor in translation_unit.cursor.get_children():
-      process_cursor(cursor, out_file, out_header, namespace_stack, header_file)
+  try:
+    with open(output_file, 'w') as out_file, open(output_header, 'w') as out_header:
+      out_file.write('#include <cstdio>\n')
+      out_file.write(f'#include "{header_file}"\n\n')
+      out_header.write(f'#include "{header_file}"\n\n')
+      namespace_stack = []
+      for cursor in translation_unit.cursor.get_children():
+        process_cursor(cursor, out_file, out_header, namespace_stack, header_file)
+  except Exception as e:
+    print("Error generating to_string function:")
+    print(e)
+    exit(1)
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Generate toString function for enums.')
@@ -77,5 +82,6 @@ if __name__ == '__main__':
   parser.add_argument('-std', '--std', default='c++11', help='C++ standard')
 
   cliargs = parser.parse_args()
+  print("args:", cliargs)
   parseArgs = [f'-I{incdir}' for incdir in cliargs.include_dirs] + [f'-std={cliargs.std}']
   generate_to_string_function(cliargs.header_file, cliargs.output_file, cliargs.output_header, parseArgs)
