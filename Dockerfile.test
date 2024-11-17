@@ -1,6 +1,5 @@
 FROM ubuntu:latest
-RUN apt update && apt install -y cmake clang lld libclang-dev libc++-dev
-RUN apt install -y gdisk mtools git python3-venv valgrind
+RUN apt update && apt install -y cmake clang lld libclang-dev libc++-dev gdisk mtools git python3-venv valgrind
 RUN mkdir -p /app/build
 COPY . /app
 WORKDIR /app/build
