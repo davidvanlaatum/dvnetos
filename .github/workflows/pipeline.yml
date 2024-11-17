@@ -17,9 +17,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
-        run: sudo apt update && sudo apt remove clang-16 clang-17 && sudo apt install clang lld libclang-dev libc++-dev valgrind
+        run: sudo apt update && sudo apt remove clang-16 clang-17 && sudo apt install clang lld libclang-dev libc++-dev valgrind ninja-build
       - name: Configure CMake
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DTEST_MODE=ON
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DTEST_MODE=ON -DCMAKE_VERBOSE_MAKEFILE=ON -G Ninja
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -- -j$(nproc)
       - name: Test
@@ -42,8 +42,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
-        run: sudo apt update && sudo apt remove clang-16 clang-17 && sudo apt install clang lld libclang-dev libc++-dev gdisk mtools git python3-venv qemu-system
+        run: sudo apt update && sudo apt remove clang-16 clang-17 && sudo apt install clang lld libclang-dev libc++-dev gdisk mtools git python3-venv qemu-system ninja-build
       - name: Configure CMake
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DARCH=${{matrix.arch}}
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DARCH=${{matrix.arch}} -DCMAKE_VERBOSE_MAKEFILE=ON -G Ninja
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -- -j$(nproc)
