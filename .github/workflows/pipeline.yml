@@ -13,13 +13,17 @@ jobs:
     name: Test
     env:
       BUILD_TYPE: Debug
+      CMAKE_COLOR_DIAGNOSTICS: ON
     runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        clang: [ON, OFF]
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
         run: sudo apt update && sudo apt remove clang-16 clang-17 && sudo apt install clang lld libclang-dev libc++-dev valgrind ninja-build
       - name: Configure CMake
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DTEST_MODE=ON -DCMAKE_VERBOSE_MAKEFILE=ON -G Ninja
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DTEST_MODE=ON -DCMAKE_VERBOSE_MAKEFILE=ON -DUSE_CLANG=${{matrix.clang}} -G Ninja
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -- -j$(nproc)
       - name: Test
@@ -35,15 +39,17 @@ jobs:
     name: Build
     env:
       BUILD_TYPE: Debug
+      CMAKE_COLOR_DIAGNOSTICS: ON
     runs-on: ubuntu-24.04
     strategy:
       matrix:
         arch: [aarch64, x86_64]
+        clang: [ON, OFF]
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
         run: sudo apt update && sudo apt remove clang-16 clang-17 && sudo apt install clang lld libclang-dev libc++-dev gdisk mtools git python3-venv qemu-system ninja-build
       - name: Configure CMake
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DARCH=${{matrix.arch}} -DCMAKE_VERBOSE_MAKEFILE=ON -G Ninja
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DARCH=${{matrix.arch}} -DUSE_CLANG=${{matrix.clang}} -DCMAKE_VERBOSE_MAKEFILE=ON -G Ninja
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -- -j$(nproc)
