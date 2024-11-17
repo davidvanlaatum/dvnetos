@@ -4,7 +4,9 @@
 #include <cstddef>
 #include "get-page.h"
 
+#ifndef PAGE_SIZE
 #define PAGE_SIZE 4096
+#endif
 struct MemBlock;
 
 typedef void *(*getPage_t)(size_t);

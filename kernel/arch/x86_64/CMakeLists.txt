@@ -1,0 +1,5 @@
+if (NOT TEST_MODE AND ARCH STREQUAL "x86_64")
+    target_compile_definitions(kernel PRIVATE -DPAGE_SIZE=4096)
+    target_include_directories(kernel PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+endif ()
+add_subdirectory(memory)

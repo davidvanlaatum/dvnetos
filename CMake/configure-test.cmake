@@ -1,0 +1,6 @@
+function(configure_test TARGET)
+  target_link_libraries(${TARGET} GTest::gtest_main c++)
+  target_link_options(${TARGET} PRIVATE ${COVERAGE_LINKER_OPTIONS})
+  target_compile_options(${TARGET} PRIVATE ${COVERAGE_CXX_FLAGS})
+  gtest_discover_tests(${TARGET})
+endfunction()

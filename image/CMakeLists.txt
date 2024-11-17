@@ -56,9 +56,6 @@ if (NOT TEST_MODE)
         set(FIRMWARE ${SOURCE_DIR})
     endif ()
 
-    #    set(LIMINE_PATH ${CMAKE_SOURCE_DIR}/tmp/limine)
-    #    set(FIRMWARE ${CMAKE_SOURCE_DIR}/tmp/RPi4_UEFI_Firmware_v1.38)
-
     add_custom_command(
             OUTPUT image.hdd
             COMMAND rm -f image.hdd
@@ -136,19 +133,24 @@ if (NOT TEST_MODE)
         ExternalProject_Get_Property(ovmf DOWNLOAD_NAME)
         set(OVMF_DOWNLOAD_FILE "${DOWNLOAD_DIR}/${DOWNLOAD_NAME}")
 
+        set(QEMU_ARGS -serial stdio -d int,mmu,cpu_reset,unimp,guest_errors,page -drive file=image.hdd,format=raw)
         if (ARCH STREQUAL "x86_64")
-            set(QEMU_ARGS)# -kernel ${CMAKE_BINARY_DIR}/kernel/kernel)
+            set(QEMU_ARGS ${QEMU_ARGS} -smp 2)
         elseif (ARCH STREQUAL "aarch64")
-            set(QEMU_ARGS -machine virt -cpu cortex-a72 -device ramfb -device qemu-xhci -device usb-kbd -device usb-mouse)
+            set(QEMU_ARGS ${QEMU_ARGS} -machine virt -cpu cortex-a72 -device ramfb -device qemu-xhci -device usb-kbd -device usb-mouse)
             ExternalProject_Add_Step(ovmf fix-size COMMAND dd if=/dev/zero of=${OVMF_DOWNLOAD_FILE} bs=1 count=0 seek=67108864)
         endif ()
 
         set(QEMU_OVMF_ARGS -drive if=pflash,unit=0,format=raw,file=${OVMF_DOWNLOAD_FILE},readonly=on)
 
         add_custom_target(run-qemu
-                COMMAND ${QEMU_SYSTEM_PATH} -serial stdio -drive file=image.hdd,format=raw ${QEMU_OVMF_ARGS} ${QEMU_ARGS}
+                COMMAND ${QEMU_SYSTEM_PATH} ${QEMU_OVMF_ARGS} ${QEMU_ARGS} $$QEMU_EXTRA_ARGS
                 USES_TERMINAL
                 DEPENDS image.hdd ovmf
         )
+        string(REPLACE ";" " " QEMU_OVMF_ARGS "${QEMU_OVMF_ARGS}")
+        string(REPLACE ";" " " QEMU_ARGS "${QEMU_ARGS}")
+        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/qemu.sh "#!/bin/sh\nset -xe\ncd ${CMAKE_CURRENT_BINARY_DIR}\nexec ${QEMU_SYSTEM_PATH} ${QEMU_OVMF_ARGS} ${QEMU_ARGS} \$QEMU_EXTRA_ARGS \"$@\"\n")
+        file(CHMOD ${CMAKE_CURRENT_BINARY_DIR}/qemu.sh PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
     endif ()
 endif ()
