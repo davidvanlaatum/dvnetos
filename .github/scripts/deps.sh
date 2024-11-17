@@ -14,4 +14,5 @@ if [[ $GITHUB_JOB == "build" ]]; then
     PACKAGES="${PACKAGES} gdisk mtools git qemu-system"
 fi
 
+echo "Installing packages: $PACKAGES"
 apt install -y $PACKAGES
