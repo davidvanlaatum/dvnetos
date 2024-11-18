@@ -12,7 +12,7 @@ Components: main
 Signed-By: /usr/share/keyrings/kitware-archive-keyring.gpg
 EOF
 
-cat > /etc/apt/sources.list.d/llvm.list <<EOF
+cat > /etc/apt/sources.list.d/llvm.sources <<EOF
 deb https://apt.llvm.org/noble/ llvm-toolchain-noble-19 main
 deb-src https://apt.llvm.org/noble/ llvm-toolchain-noble-19 main
 Types: deb deb-src
