@@ -1,6 +1,6 @@
 function(configure_test TARGET)
   target_link_libraries(${TARGET} PRIVATE GTest::gtest_main)
-  if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
     if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
       target_link_libraries(${TARGET} PRIVATE stdc++ m)
     elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")

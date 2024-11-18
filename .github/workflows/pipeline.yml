@@ -18,16 +18,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        clang: [ON, OFF]
         os: [ubuntu-24.04]
     steps:
       - uses: actions/checkout@v4
-      - name: Set environment variable
-        run: echo "MATRIX_CLANG=${{ matrix.clang }}" >> $GITHUB_ENV
       - name: Install dependencies
-        run: sudo --preserve-env=MATRIX_CLANG --preserve-env=GITHUB_JOB .github/scripts/deps.sh
+        run: sudo --preserve-env=GITHUB_JOB .github/scripts/deps.sh
       - name: Configure CMake
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DTEST_MODE=ON -DCMAKE_VERBOSE_MAKEFILE=ON -DUSE_CLANG=${{matrix.clang}} -G Ninja
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DTEST_MODE=ON -DCMAKE_VERBOSE_MAKEFILE=ON -G Ninja
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -- -j$(nproc)
       - name: Test
@@ -49,15 +46,12 @@ jobs:
       fail-fast: false
       matrix:
         arch: [aarch64, x86_64]
-        clang: [ON, OFF]
         os: [ubuntu-24.04]
     steps:
       - uses: actions/checkout@v4
-      - name: Set environment variable
-        run: echo "MATRIX_CLANG=${{ matrix.clang }}" >> $GITHUB_ENV
       - name: Install dependencies
-        run: sudo --preserve-env=MATRIX_CLANG --preserve-env=GITHUB_JOB .github/scripts/deps.sh
+        run: sudo --preserve-env=GITHUB_JOB .github/scripts/deps.sh
       - name: Configure CMake
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DARCH=${{matrix.arch}} -DUSE_CLANG=${{matrix.clang}} -DCMAKE_VERBOSE_MAKEFILE=ON -G Ninja
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DARCH=${{matrix.arch}} -DCMAKE_VERBOSE_MAKEFILE=ON -G Ninja
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -- -j$(nproc)
