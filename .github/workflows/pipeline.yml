@@ -14,11 +14,7 @@ jobs:
     env:
       BUILD_TYPE: Debug
       CMAKE_COLOR_DIAGNOSTICS: ON
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-24.04]
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
@@ -53,12 +49,11 @@ jobs:
     env:
       BUILD_TYPE: Debug
       CMAKE_COLOR_DIAGNOSTICS: ON
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
         arch: [aarch64, x86_64]
-        os: [ubuntu-24.04]
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
