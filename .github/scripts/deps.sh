@@ -38,5 +38,5 @@ apt install -y $PACKAGES
 
 if [[ ! -f /usr/bin/ld.lld ]]
 then
-  ln -sv /usr/lib/llvm-19/bin/ld.lld /usr/bin/ld.lld
+  ln -sv /usr/lib/llvm-18/bin/ld.lld /usr/bin/ld.lld
 fi
