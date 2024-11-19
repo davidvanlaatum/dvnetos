@@ -29,8 +29,6 @@ project(dvnetos-tools LANGUAGES CXX)
 #  endif ()
 #endforeach ()
 
-message(STATUS "CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
-
 find_package(Python 3 REQUIRED)
 
 include(ExternalProject)
@@ -45,17 +43,10 @@ ExternalProject_Add(
 ExternalProject_Get_Property(venv BINARY_DIR)
 set(VENV_PATH ${BINARY_DIR})
 
-#execute_process(
-#    COMMAND ${Python_EXECUTABLE} -m venv venv
-#    COMMAND ${VENV_PATH}/bin/pip install clang
-#    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-#)
-
 if(USE_CLANG)
   get_filename_component(CLANG_DIR ${CLANG} DIRECTORY)
   get_filename_component(CLANG_DIR ${CLANG_DIR} DIRECTORY)
   set(CLANG_DIR ${CLANG_DIR}/lib/)
-  message(STATUS "CLANG_DIR: ${CLANG_DIR}")
 #  set(CMAKE_FIND_DEBUG_MODE TRUE)
   find_library(LIBCLANG_PATH NAMES clang PATHS ${CLANG_DIR} REQUIRED NO_CACHE)
 endif ()
@@ -63,5 +54,3 @@ endif ()
 set(PYTHON_VENV ${CMAKE_COMMAND} -E env "LIBCLANG_PATH=${LIBCLANG_PATH}" -- ${VENV_PATH}/bin/python)
 set(PYTHON_VENV ${CMAKE_COMMAND} -E env "LIBCLANG_PATH=${LIBCLANG_PATH}" -- ${VENV_PATH}/bin/python PARENT_SCOPE)
 set(ENUM2STRING ${CMAKE_CURRENT_SOURCE_DIR}/enumToString.py PARENT_SCOPE)
-
-message(STATUS "PYTHON_VENV: ${PYTHON_VENV}")

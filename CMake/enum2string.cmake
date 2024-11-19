@@ -7,7 +7,6 @@ function(enum2string)
     message(FATAL_ERROR "enum2string: TARGET not specified")
   endif ()
   get_filename_component(HEADER_NAME ${ARG_HEADER} NAME_WE)
-  message(STATUS "enum2string: HEADER_NAME: ${HEADER_NAME}")
   add_custom_command(
       OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/${HEADER_NAME}_tostring.cpp ${CMAKE_CURRENT_SOURCE_DIR}/${HEADER_NAME}_tostring.h
       COMMAND ${PYTHON_VENV} ${ENUM2STRING} ${ARG_HEADER} ${HEADER_NAME}_tostring.cpp ${HEADER_NAME}_tostring.h -std=c++$<TARGET_PROPERTY:${ARG_TARGET},CXX_STANDARD> "-I$<JOIN:$<TARGET_PROPERTY:${ARG_TARGET},INCLUDE_DIRECTORIES>,;-I>"

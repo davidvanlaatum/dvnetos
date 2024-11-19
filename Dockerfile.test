@@ -1,12 +1,27 @@
 FROM ubuntu:latest
-RUN apt update && apt install -y cmake clang lld libclang-dev libc++-dev gdisk mtools git python3-venv valgrind
+RUN apt update && apt install -y ca-certificates gnupg
+ADD https://apt.kitware.com/keys/kitware-archive-latest.asc /tmp/kitware-archive-latest.asc
+RUN cat /tmp/kitware-archive-latest.asc | gpg --dearmor - | tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
+RUN echo "Types: deb\n\
+URIs: https://apt.kitware.com/ubuntu/\n\
+Suites: noble\n\
+Components: main\n\
+Signed-By: /usr/share/keyrings/kitware-archive-keyring.gpg" > /etc/apt/sources.list.d/kitware.sources && cat /etc/apt/sources.list.d/kitware.sources
+#RUN echo "deb https://apt.llvm.org/noble/ llvm-toolchain-noble-19 main\n\
+#deb-src https://apt.llvm.org/noble/ llvm-toolchain-noble-19 main\n\
+#Types: deb deb-src\n\
+#URIs: https://apt.llvm.org/noble/\n\
+#Suites: llvm-toolchain-noble-19\n\
+#Components: main\n\
+#Trusted: yes\n\
+#Options: trusted=yes" > /etc/apt/sources.list.d/llvm.sources && cat /etc/apt/sources.list.d/llvm.sources
+RUN apt update && apt install -y cmake clang-18 lld-18 clang-tools-18 libclang-18-dev libc++-dev gdisk mtools git python3-venv valgrind && ln -sv /usr/lib/llvm-18/bin/ld.lld /usr/bin/ld.lld
 RUN mkdir -p /app/build
 COPY . /app
 WORKDIR /app/build
-ENV CTEST_OUTPUT_ON_FAILURE=1
-RUN cmake .. -DTEST_MODE=ON -DCMAKE_BUILD_TYPE=Debug && cmake --build . && ctest --output-on-failure --test-action memcheck || (find Testing/Temporary -name "MemoryCheck*.log" -print -exec cat {} \; && exit 1)
-RUN for arch in $(find kernel/arch -maxdepth 1 -mindepth 1 -not -name CMakeLists.txt -exec basename {} \;); do \
-    mkdir -p /app/build-$arch && cd /app/build-$arch && \
-    cmake .. -DCMAKE_BUILD_TYPE=Debug -DARCH=$arch && \
-    cmake --build .; \
-done
+ENV CTEST_OUTPUT_ON_FAILURE=1 CMAKE_COLOR_DIAGNOSTICS=ON X=1
+RUN cmake .. -DTEST_MODE=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_VERBOSE_MAKEFILE=ON && cmake --build . -j $(nproc) && ctest --output-on-failure --test-action memcheck --output-junit junit.xml
+WORKDIR /app/build-x86_64
+RUN cmake --version && cmake .. -DCMAKE_BUILD_TYPE=Debug -DARCH=x86_64 && cmake --build . -j $(nproc)
+WORKDIR /app/build-aarch64
+RUN cmake .. -DCMAKE_BUILD_TYPE=Debug -DARCH=aarch64 && cmake --build . -j $(nproc)
