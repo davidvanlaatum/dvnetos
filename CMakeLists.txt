@@ -1,6 +1,6 @@
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_VERBOSE_MAKEFILE ON CACHE INTERNAL "" FORCE)
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.29)
 include(CMakePrintHelpers)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMake)
 include(arch-alias)
