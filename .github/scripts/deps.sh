@@ -35,3 +35,8 @@ fi
 
 echo "Installing packages: $PACKAGES"
 apt install -y $PACKAGES
+
+if [[ ! -f /usr/bin/ld.lld ]]
+then
+  ln -sv /usr/lib/llvm-19/bin/ld.lld /usr/bin/ld.lld
+fi
