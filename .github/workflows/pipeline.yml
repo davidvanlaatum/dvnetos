@@ -29,13 +29,20 @@ jobs:
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -- -j$(nproc)
       - name: Test
         working-directory: ${{github.workspace}}/build
-        run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure --test-action memcheck
+        run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure --test-action memcheck --output-junit junit.xml
       - name: Upload build artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: build-artifacts
-          path: build/Testing
+          path: |
+            build/Testing
+            build/CMakeFiles
+      - name: Junit Test Dashboard
+        if: always()
+        uses: janisz/action@v2
+        with:
+          paths: ${{github.workspace}}/build/junit.xml
   build:
     name: Build
     env:
@@ -55,3 +62,11 @@ jobs:
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DARCH=${{matrix.arch}} -DCMAKE_VERBOSE_MAKEFILE=ON -G Ninja
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -- -j$(nproc)
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            build/Testing
+            build/CMakeFiles
