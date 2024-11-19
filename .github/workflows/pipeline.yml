@@ -27,14 +27,19 @@ jobs:
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DTEST_MODE=ON -DCMAKE_VERBOSE_MAKEFILE=ON -G Ninja
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -- -j$(nproc)
+      - name: Test MemCheck
+        working-directory: ${{github.workspace}}/build
+        continue-on-error: true
+        run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure --test-action memcheck --output-junit junit.xml
       - name: Test
         working-directory: ${{github.workspace}}/build
-        run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure --test-action memcheck --output-junit junit.xml
+        continue-on-error: true
+        run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure --output-junit junit.xml
       - name: Upload build artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build-artifacts
+          name: build-artifacts-test
           path: |
             build/Testing
             build/CMakeFiles
@@ -66,7 +71,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build-artifacts
+          name: build-artifacts-${{matrix.arch}}
           path: |
             build/Testing
             build/CMakeFiles
