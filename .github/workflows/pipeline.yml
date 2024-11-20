@@ -31,6 +31,9 @@ jobs:
         working-directory: ${{github.workspace}}/build
         continue-on-error: true
         run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure --output-junit junit.xml
+      - name: Generate Coverage
+        working-directory: ${{github.workspace}}/build
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target coverage
       - name: Upload build artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -39,11 +42,21 @@ jobs:
           path: |
             build/Testing
             build/CMakeFiles
+      - name: Upload Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: ${{github.workspace}}/build/coverage
       - name: Junit Test Dashboard
         if: always()
         uses: janisz/action@v2
         with:
           paths: ${{github.workspace}}/build/junit.xml
+      - name: Code Coverage Summary Report
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: ${{github.workspace}}/build/coverage.xml
   build:
     name: Build
     env:

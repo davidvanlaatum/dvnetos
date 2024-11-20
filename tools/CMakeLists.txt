@@ -35,7 +35,7 @@ ExternalProject_Add(
     venv
     DOWNLOAD_COMMAND ""
     CONFIGURE_COMMAND ${Python_EXECUTABLE} -m venv .
-    BUILD_COMMAND bin/pip install clang
+    BUILD_COMMAND bin/pip install clang lcov_cobertura setuptools
     INSTALL_COMMAND ""
     EXCLUDE_FROM_ALL TRUE
 )
@@ -51,5 +51,6 @@ if(USE_CLANG)
 endif ()
 
 set(PYTHON_VENV ${CMAKE_COMMAND} -E env "LIBCLANG_PATH=${LIBCLANG_PATH}" -- ${VENV_PATH}/bin/python)
-set(PYTHON_VENV ${CMAKE_COMMAND} -E env "LIBCLANG_PATH=${LIBCLANG_PATH}" -- ${VENV_PATH}/bin/python PARENT_SCOPE)
+set(PYTHON_VENV ${PYTHON_VENV} PARENT_SCOPE)
 set(ENUM2STRING ${CMAKE_CURRENT_SOURCE_DIR}/enumToString.py PARENT_SCOPE)
+set(LCOV_COBERTURA_PATH ${VENV_PATH}/bin/lcov_cobertura PARENT_SCOPE)

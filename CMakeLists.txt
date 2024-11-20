@@ -24,6 +24,8 @@ if (USE_CLANG)
   find_program(CLANG_LD NAMES ld.lld REQUIRED HINTS ${LLVM_BIN_DIRS})
   find_program(CLANG_LLD_LINK NAMES lld-link REQUIRED HINTS ${LLVM_BIN_DIRS})
   find_program(CLANG_TIDY names clang-tidy HINTS ${LLVM_BIN_DIRS})
+  find_program(LLVM_PROFDATA NAMES llvm-profdata HINTS ${LLVM_BIN_DIRS})
+  find_program(LLVM_COV NAMES llvm-cov HINTS ${LLVM_BIN_DIRS})
   if (CLANG_TIDY)
     set(CMAKE_C_CLANG_TIDY ${CLANG_TIDY})
     set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY})
@@ -153,3 +155,31 @@ add_subdirectory(image)
 cmake_print_variables(CMAKE_SYSTEM_NAME CMAKE_SYSTEM_PROCESSOR CMAKE_OBJCOPY CMAKE_C_COMPILER CMAKE_CXX_COMPILER CMAKE_ASM_COMPILER CMAKE_LINKER CMAKE_C_FLAGS CMAKE_CXX_FLAGS CMAKE_ASM_FLAGS CMAKE_LINKER_FLAGS KERNEL_CXX_FLAGS KERNEL_LINKER_OPTIONS)
 getAllTargets(all_targets)
 cmake_print_properties(TARGETS ${all_targets} PROPERTIES TYPE SOURCES SOURCE_DIR INCLUDE_DIRECTORIES LINK_DEPENDS LINK_OPTIONS COMPILE_OPTIONS LINKER_TYPE LINKER_LANGUAGE)
+
+if (TEST_MODE)
+  getAllTests(TEST_EXECUTABLES)
+  set(COVERAGE_INPUT_FILES "")
+  set(COVERAGE_EXECUTABLES "")
+  foreach (TEST_EXECUTABLE ${TEST_EXECUTABLES})
+    get_target_property(COVERAGE_FILES ${TEST_EXECUTABLE} COVERAGE_FILES)
+    if (COVERAGE_FILES)
+      file(RELATIVE_PATH REL ${CMAKE_CURRENT_BINARY_DIR} ${COVERAGE_FILES})
+      list(APPEND COVERAGE_INPUT_FILES ${REL})
+      list(APPEND COVERAGE_EXECUTABLES -object $<TARGET_FILE:${TEST_EXECUTABLE}>)
+    endif ()
+  endforeach ()
+  if (LLVM_PROFDATA AND LLVM_COV)
+    file(GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/CTestCustom.cmake CONTENT "set(CTEST_CUSTOM_PRE_TEST \"cmake -P clean-coverage-files.cmake\")")
+    configure_file(CMake/clean-coverage-files.cmake.in clean-coverage-files.cmake @ONLY)
+    add_custom_target(coverage
+        COMMAND ${LLVM_PROFDATA} merge -sparse ${COVERAGE_INPUT_FILES} -o default.profdata
+        COMMAND ${LLVM_COV} show -instr-profile=default.profdata ${COVERAGE_EXECUTABLES} --format=html -output-dir=coverage/
+        COMMAND ${LLVM_COV} report -instr-profile=default.profdata ${COVERAGE_EXECUTABLES} --ignore-filename-regex='.*_test.cpp'
+        COMMAND ${LLVM_COV} export -instr-profile=default.profdata ${COVERAGE_EXECUTABLES} --ignore-filename-regex='.*_test.cpp' --format=lcov > coverage.info
+        COMMAND ${LCOV_COBERTURA_PATH} coverage.info --base-dir ${CMAKE_SOURCE_DIR} --output coverage.xml --demangle
+        USES_TERMINAL
+        DEPENDS venv
+    )
+    set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES "coverage;coverage.info;default.profdata;coverage.xml")
+  endif ()
+endif ()
