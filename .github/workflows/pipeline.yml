@@ -60,7 +60,7 @@ jobs:
           format: markdown
           output: both
       - name: Coverage Summary
-        run: cat ${{github.workspace}}/coverage-results.md >> $GITHUB_STEP_SUMMARY
+        run: cat ${{github.workspace}}/code-coverage-results.md >> $GITHUB_STEP_SUMMARY
   build:
     name: Build
     env:
