@@ -27,7 +27,7 @@ test -f /usr/share/doc/kitware-archive-keyring/copyright ||
 wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
 
 apt update
-apt remove clang-16 clang-17
+apt remove clang-16 clang-17 llvm-16 llvm-17
 PACKAGES="cmake libc++-dev ninja-build python3-venv valgrind clang-18 lld-18 libclang-18-dev clang-tools-18"
 if [[ $GITHUB_JOB == "build" ]]; then
     PACKAGES="${PACKAGES} gdisk mtools git qemu-system"
