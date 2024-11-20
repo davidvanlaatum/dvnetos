@@ -59,6 +59,8 @@ jobs:
           filename: build/coverage.xml
           format: markdown
           output: both
+      - name: Coverage Summary
+        run: cat ${{github.workspace}}/coverage-results.md >> $GITHUB_STEP_SUMMARY
   build:
     name: Build
     env:
