@@ -79,6 +79,10 @@ jobs:
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DARCH=${{matrix.arch}} -DCMAKE_VERBOSE_MAKEFILE=ON -G Ninja
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -- -j$(nproc)
+      - name: Build Image
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target image -- -j$(nproc)
+      - name: Build OVMF
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target ovmf -- -j$(nproc)
       - name: Upload build artifacts
         if: always()
         uses: actions/upload-artifact@v4
