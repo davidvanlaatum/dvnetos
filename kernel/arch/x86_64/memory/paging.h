@@ -18,7 +18,7 @@ namespace memory {
     void mapMemory(uint64_t physical_address, uint64_t virtual_address, size_t size, uint8_t flags,
                    uint8_t flags2) const;
 
-    [[nodiscard]] uint64_t makePageAligned(uint64_t address) const {
+    [[nodiscard]] uint64_t makePageAligned(const uint64_t address) const {
       return address & ~PAGE_FLAGS_MASK & ~PAGE_FLAGS2_MASK;
     }
 
@@ -32,6 +32,7 @@ namespace memory {
     static constexpr uint64_t PAGE_ACCESSED = 1 << 5;
     static constexpr uint64_t PAGE_DIRTY = 1 << 6;
     static constexpr uint64_t PAGE_SIZE_FLAG = 1 << 7;
+    static constexpr uint64_t PAGE_GLOBAL = 1 << 8;
     static constexpr uint64_t PAGE_FLAGS_MASK = 0xFFF;
     static constexpr uint64_t PAGE_NX = 1ULL << 63;
     static constexpr auto PAGE_FLAGS2_SHIFT = 52;
@@ -40,8 +41,6 @@ namespace memory {
 
   protected:
     uint64_t *root = nullptr;
-
-    void applyOffset(uint64_t virtualOffset) const;
 
     struct PageTableRangeData {
       uint64_t virtualStart;

@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-#define kpanic(msg) panic(__FILE__,__LINE__,msg)
+#define kpanic(msg) panic(&__FILE__[sizeof(CMAKE_SOURCE_DIR)],__LINE__,msg)
 
 [[noreturn]] extern void halt();
 

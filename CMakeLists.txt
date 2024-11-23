@@ -137,6 +137,7 @@ add_compile_options_if_supported(CXX -ffreestanding KERNEL_LINKER_OPTIONS)
 add_compile_options_if_supported(CXX -Wl,-Map=output.map KERNEL_LINKER_OPTIONS)
 add_compile_options_if_supported(CXX -mcmodel=kernel KERNEL_LINKER_OPTIONS)
 add_compile_options_if_supported(CXX -Werror KERNEL_LINKER_OPTIONS)
+add_compile_definitions(CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
 if (TEST_MODE)
   add_linker_options_if_supported(CXX -fprofile-instr-generate COVERAGE_LINKER_OPTIONS)
