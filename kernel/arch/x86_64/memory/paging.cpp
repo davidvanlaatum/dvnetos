@@ -131,27 +131,20 @@ namespace memory {
       uint64_t hhdmVirtualOffset;
     };
     callbackData data = {count, mappings, this, hhdmVirtualOffset};
-    pageTableToRangesCallback<callbackData> callback = [
-        ](PageTableRangeData *page_table_range_data, callbackData *data) {
+    pageTableToRangesCallback<callbackData> callback = [](PageTableRangeData *page_table_range_data,
+                                                          callbackData *data) {
       static auto isTypeToMap = [](const uint64_t type) {
         return type == LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE
                || type == LIMINE_MEMMAP_KERNEL_AND_MODULES
                || type == LIMINE_MEMMAP_FRAMEBUFFER;
       };
-      static auto rangesOverlap = [](PageTableRangeData *page_table_range_data,
-                                     limine_memmap_entry *entry) {
-        if (page_table_range_data->physicalStart <= entry->base + entry->length &&
-            page_table_range_data->physicalEnd >= entry->base) {
-          return true;
-        } else if (page_table_range_data->physicalStart <= entry->base && page_table_range_data->
-                   physicalEnd >= entry->base) {
-          return true;
-        } else if (page_table_range_data->physicalStart <= entry->base + entry->length &&
-                   page_table_range_data->physicalEnd >= entry->base + entry->length) {
-          return true;
-        } else {
-          return false;
-        }
+      static auto rangesOverlap = [](PageTableRangeData *page_table_range_data, limine_memmap_entry *entry) {
+        return (page_table_range_data->physicalStart <= entry->base + entry->length &&
+                page_table_range_data->physicalEnd >= entry->base) ||
+               (page_table_range_data->physicalStart <= entry->base &&
+                page_table_range_data->physicalEnd >= entry->base) ||
+               (page_table_range_data->physicalStart <= entry->base + entry->length &&
+                page_table_range_data->physicalEnd >= entry->base + entry->length);
       };
       bool mapped = false;
       for (size_t i = 0; i < data->mapCount; i++) {
