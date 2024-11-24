@@ -7,7 +7,7 @@ namespace memory {
     }
 
     void Paging::mapPartial(const uint64_t physical_address, const uint64_t virtual_address, const size_t size,
-                        const uint8_t flags, const uint8_t flags2) const {
+                        const uint64_t flags) const {
     }
 
 }

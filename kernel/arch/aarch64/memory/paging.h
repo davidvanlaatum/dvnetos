@@ -10,8 +10,7 @@ namespace memory {
         void init(size_t count, limine_memmap_entry **mappings, uint64_t hhdmVirtualOffset,
                   uint64_t kernelVirtualOffset);
         // map a physical address to a virtual address that doesn't have to be page aligned
-        void mapPartial(uint64_t physical_address, uint64_t virtual_address, size_t size, uint8_t flags,
-                        uint8_t flags2) const;
+        void mapPartial(uint64_t physical_address, uint64_t virtual_address, size_t size, uint64_t flags) const;
     };
 
     extern Paging paging;
