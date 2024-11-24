@@ -46,14 +46,14 @@ namespace smbios {
         const auto *entry = reinterpret_cast<Entry32 *>(
           reinterpret_cast<uint64_t>(smbios_request.response->entry_32) + hhdmOffset);
         memory::paging.mapPartial(reinterpret_cast<uint64_t>(smbios_request.response->entry_32),
-                                  reinterpret_cast<uint64_t>(entry), sizeof(Entry32), 0, 0);
+                                  reinterpret_cast<uint64_t>(entry), sizeof(Entry32), 0);
         framebuffer::defaultVirtualConsole.appendFormattedText("SMBIOS 32-bit entry: %d.%d table at %p length %d\n",
                                                                static_cast<int>(entry->major_version),
                                                                static_cast<int>(entry->minor_version),
                                                                entry->table_address, entry->table_length);
         const auto *table = reinterpret_cast<TableHeader *>(
           static_cast<uint64_t>(entry->table_address) + hhdmOffset);
-        memory::paging.mapPartial(entry->table_address, reinterpret_cast<uint64_t>(table), entry->table_length, 0, 0);
+        memory::paging.mapPartial(entry->table_address, reinterpret_cast<uint64_t>(table), entry->table_length, 0);
         dumpTable(table, entry->table_length);
       } else {
         framebuffer::defaultVirtualConsole.appendText("No SMBIOS address\n");

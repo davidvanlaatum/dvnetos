@@ -65,7 +65,7 @@ namespace memory {
     };
   }
 
-  char *Paging::tableFlagsToString(const uint8_t flags, const uint8_t flags2) {
+  char *Paging::tableFlagsToString(const uint64_t flags) {
     static char buf[32];
     size_t n = 0;
     if (flags & PAGE_PRESENT) {
@@ -89,7 +89,7 @@ namespace memory {
     if (flags & PAGE_GLOBAL) {
       buf[n++] = 'G';
     }
-    if (flags2 & PAGE_NX >> PAGE_FLAGS2_SHIFT) {
+    if (flags & PAGE_NX) {
       buf[n++] = 'N';
       buf[n++] = 'X';
     }
@@ -120,7 +120,7 @@ namespace memory {
     for (int i = 0; i < count; i++) {
       if (mappings[i]->type == LIMINE_MEMMAP_FRAMEBUFFER) {
         mapMemory(mappings[i]->base, framebuffer::defaultFramebuffer.getFramebufferVirtualAddress(),
-                  mappings[i]->length, PAGE_PRESENT | PAGE_WRITE | PAGE_WRITE_THROUGH, 0);
+                  mappings[i]->length, PAGE_PRESENT | PAGE_WRITE | PAGE_WRITE_THROUGH);
         break;
       }
     }
@@ -163,12 +163,12 @@ namespace memory {
               page_table_range_data->virtualEnd, page_table_range_data->physicalStart,
               page_table_range_data->physicalEnd, page_table_range_data->pageCount,
               bytesToHumanReadable(buff, sizeof(buff), page_table_range_data->pageCount * PAGE_SIZE),
-              tableFlagsToString(page_table_range_data->flags, page_table_range_data->flags2),
+              tableFlagsToString(page_table_range_data->flags),
               data->mappings[i]->type);
             data->paging->mapMemory(page_table_range_data->physicalStart,
                                     page_table_range_data->virtualStart,
                                     page_table_range_data->pageCount * PAGE_SIZE,
-                                    page_table_range_data->flags, page_table_range_data->flags2);
+                                    page_table_range_data->flags);
             mapped = true;
             break;
           }
@@ -181,7 +181,7 @@ namespace memory {
           page_table_range_data->virtualEnd, page_table_range_data->physicalStart,
           page_table_range_data->physicalEnd, page_table_range_data->pageCount,
           bytesToHumanReadable(buff, sizeof(buff), page_table_range_data->pageCount * PAGE_SIZE),
-          tableFlagsToString(page_table_range_data->flags, page_table_range_data->flags2));
+          tableFlagsToString(page_table_range_data->flags));
       }
     };
     mapPhysicalToVirtual<callbackData> mapper = [](const uint64_t v, callbackData *d) {
@@ -198,25 +198,25 @@ namespace memory {
   }
 
   void Paging::mapPartial(const uint64_t physical_address, const uint64_t virtual_address, const size_t size,
-                          const uint8_t flags, const uint8_t flags2) const {
+                          const uint64_t flags) {
     const auto new_physical_address = makePageAligned(physical_address);
     const auto new_virtual_address = makePageAligned(virtual_address);
     auto new_size = size + PAGE_SIZE - (size % PAGE_SIZE);
     if (physical_address + size > new_physical_address + new_size) {
       new_size += PAGE_SIZE;
     }
-    mapMemory(new_physical_address, new_virtual_address, new_size, flags, flags2);
+    mapMemory(new_physical_address, new_virtual_address, new_size, flags);
   }
 
   void Paging::mapMemory(uint64_t physical_address, uint64_t virtual_address, const size_t size,
-                         const uint8_t flags, const uint8_t flags2) const {
+                         const uint64_t flags) {
     const size_t num_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE;
     if (num_pages * PAGE_SIZE != size) {
       kpanic("?\n");
     }
     framebuffer::defaultVirtualConsole.appendFormattedText(
       "mapping %p-%p to %p-%p (%d) %s\n", virtual_address, virtual_address + (num_pages * PAGE_SIZE) - 1,
-      physical_address, physical_address + (num_pages * PAGE_SIZE) - 1, num_pages, tableFlagsToString(flags, flags2));
+      physical_address, physical_address + (num_pages * PAGE_SIZE) - 1, num_pages, tableFlagsToString(flags));
     if (physical_address % PAGE_SIZE != 0) {
       kpanic("physical address must be page aligned");
     }
@@ -255,8 +255,7 @@ namespace memory {
           framebuffer::defaultVirtualConsole.appendFormattedText(
             "mapping huge page at %p-%p/%p-%p\n", virtual_address, virtual_address + (PAGE_SIZE * PAGE_ENTRIES) - 1,
             physical_address, physical_address + (PAGE_SIZE * PAGE_ENTRIES) - 1);
-          pd[idx.l3] = physical_address | PAGE_PRESENT | PAGE_SIZE_FLAG | flags
-                       | static_cast<uint64_t>(flags2) << PAGE_FLAGS2_SHIFT;
+          pd[idx.l3] = physical_address | PAGE_PRESENT | PAGE_SIZE_FLAG | flags;
           virtual_address += PAGE_SIZE * PAGE_ENTRIES;
           physical_address += PAGE_SIZE * PAGE_ENTRIES;
           i += PAGE_ENTRIES - 1;
@@ -269,24 +268,21 @@ namespace memory {
       } else if (pd[idx.l3] & PAGE_SIZE_FLAG) {
         continue;
       }
-      const auto pt = reinterpret_cast<uint64_t *>(adjustPageTablePhysicalToVirtual(pd[idx.l3]) & ~PAGE_FLAGS_MASK);
+      const auto pt = reinterpret_cast<uint64_t *>(adjustPageTablePhysicalToVirtual(pd[idx.l3] & ~PAGE_FLAGS_MASK));
 
-      const uint64_t newValue = (physical_address & ~PAGE_FLAGS_MASK) | PAGE_PRESENT | flags
-                                | static_cast<uint64_t>(flags2) << PAGE_FLAGS2_SHIFT;
+      const uint64_t newValue = (physical_address & ~PAGE_FLAGS_MASK) | PAGE_PRESENT | flags;
       if (pt[idx.l4] != 0 && pt[idx.l4] != newValue) {
         framebuffer::defaultVirtualConsole.appendFormattedText(
           "attempted to overwrite page table entry for %p from %p to %p",
-          virtual_address, pt[idx.l4] & ~PAGE_FLAGS_MASK & ~PAGE_FLAGS2_MASK,
-          newValue & ~PAGE_FLAGS_MASK & ~PAGE_FLAGS2_MASK);
-        const auto oldFlags = pt[idx.l4] & (PAGE_FLAGS_MASK | PAGE_FLAGS2_MASK) & ~(PAGE_ACCESSED | PAGE_DIRTY);
-        const auto newFlags = newValue & (PAGE_FLAGS_MASK | PAGE_FLAGS2_MASK) & ~(PAGE_ACCESSED | PAGE_DIRTY);
+          virtual_address, pt[idx.l4] & ~PAGE_FLAGS_MASK,
+          newValue & ~PAGE_FLAGS_MASK);
+        const auto oldFlags = pt[idx.l4] & PAGE_FLAGS_MASK & ~(PAGE_ACCESSED | PAGE_DIRTY);
+        const auto newFlags = newValue & PAGE_FLAGS_MASK & ~(PAGE_ACCESSED | PAGE_DIRTY);
         if (oldFlags != newFlags) {
           framebuffer::defaultVirtualConsole.appendFormattedText(" old flags %s", tableFlagsToString(
-                                                                   oldFlags & PAGE_FLAGS_MASK,
-                                                                   (oldFlags & PAGE_FLAGS2_MASK) >> PAGE_FLAGS2_SHIFT));
+                                                                   oldFlags & PAGE_FLAGS_MASK));
           framebuffer::defaultVirtualConsole.appendFormattedText(" new flags %s", tableFlagsToString(
-                                                                   newFlags & PAGE_FLAGS_MASK,
-                                                                   (newFlags & PAGE_FLAGS2_MASK) >> PAGE_FLAGS2_SHIFT));
+                                                                   newFlags & PAGE_FLAGS_MASK));
         }
         framebuffer::defaultVirtualConsole.appendText("\n");
         kpanic("page table entry already exists");

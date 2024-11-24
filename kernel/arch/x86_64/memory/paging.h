@@ -12,14 +12,12 @@ namespace memory {
               uint64_t kernelVirtualOffset);
 
     // map a physical address to a virtual address that doesn't have to be page aligned
-    void mapPartial(uint64_t physical_address, uint64_t virtual_address, size_t size, uint8_t flags,
-                    uint8_t flags2) const;
+    void mapPartial(uint64_t physical_address, uint64_t virtual_address, size_t size, uint64_t flags);
 
-    void mapMemory(uint64_t physical_address, uint64_t virtual_address, size_t size, uint8_t flags,
-                   uint8_t flags2) const;
+    void mapMemory(uint64_t physical_address, uint64_t virtual_address, size_t size, uint64_t flags);
 
-    [[nodiscard]] uint64_t makePageAligned(const uint64_t address) const {
-      return address & ~PAGE_FLAGS_MASK & ~PAGE_FLAGS2_MASK;
+    [[nodiscard]] static uint64_t makePageAligned(const uint64_t address) {
+      return address & ~0xFFFull;
     }
 
     static constexpr size_t PAGE_ENTRIES = PAGE_SIZE / sizeof(uint64_t);
@@ -33,11 +31,10 @@ namespace memory {
     static constexpr uint64_t PAGE_DIRTY = 1 << 6;
     static constexpr uint64_t PAGE_SIZE_FLAG = 1 << 7;
     static constexpr uint64_t PAGE_GLOBAL = 1 << 8;
-    static constexpr uint64_t PAGE_FLAGS_MASK = 0xFFF;
     static constexpr uint64_t PAGE_NX = 1ULL << 63;
-    static constexpr auto PAGE_FLAGS2_SHIFT = 52;
+    static constexpr uint64_t PAGE_ADDR_MASK = 0x000FFFFFFFFFF000ull;
     // bits 52-63 are reserved for future use + NX
-    static constexpr uint64_t PAGE_FLAGS2_MASK = 0xFFFll << PAGE_FLAGS2_SHIFT;
+    static constexpr uint64_t PAGE_FLAGS_MASK = 0xFFF | 0xFFFull << 52;
 
   protected:
     uint64_t *root = nullptr;
@@ -47,8 +44,7 @@ namespace memory {
       uint64_t virtualEnd;
       uint64_t physicalStart;
       uint64_t physicalEnd;
-      uint8_t flags;
-      uint8_t flags2;
+      uint64_t flags;
       uint64_t pageCount;
     };
 
@@ -63,8 +59,8 @@ namespace memory {
                                   pageTableToRangesCallback<T> callback, T *data);
 
     template<typename T>
-    using walkPageTableLeafCallback = bool (*)(uint64_t virtualAddress, uint64_t physicalAddress, uint8_t flags,
-                                               uint8_t flags2, uint32_t pageSize, T *data);
+    using walkPageTableLeafCallback = bool (*)(uint64_t virtualAddress, uint64_t physicalAddress, uint64_t flags,
+                                               uint32_t pageSize, T *data);
     template<typename T>
     using walkPageTableLeafMissingCallback = bool (*)(uint64_t virtualAddress, T *data);
 
@@ -84,13 +80,13 @@ namespace memory {
 
     static virtualToPageIndexes_t virtualToPageIndexes(uint64_t virtualAddress);
 
-    static char *tableFlagsToString(uint8_t flags, uint8_t flags2);
+    static char *tableFlagsToString(uint64_t flags);
 
-    [[nodiscard]] uint64_t adjustPageTablePhysicalToVirtual(uint64_t in) const {
+    [[nodiscard]] uint64_t adjustPageTablePhysicalToVirtual(const uint64_t in) const {
       return in + pageTableOffset;
     }
 
-    [[nodiscard]] uint64_t adjustPageTableVirtualToPhysical(uint64_t in) const {
+    [[nodiscard]] uint64_t adjustPageTableVirtualToPhysical(const uint64_t in) const {
       return in - pageTableOffset;
     }
 
@@ -119,9 +115,8 @@ namespace memory {
               if (l3Table[k] & PAGE_PRESENT) {
                 if (l3Table[k] & PAGE_SIZE_FLAG) {
                   if (!leafCallback(pageIndexesToVirtual(blockIdxL3, 3),
-                                    l3Table[k] & ~PAGE_FLAGS_MASK & ~PAGE_FLAGS2_MASK,
-                                    l3Table[k] & PAGE_FLAGS_MASK & ~PAGE_SIZE_FLAG,
-                                    (l3Table[k] & PAGE_FLAGS2_MASK) >> PAGE_FLAGS2_SHIFT, PAGE_SIZE * PAGE_ENTRIES,
+                                    l3Table[k] & PAGE_ADDR_MASK,
+                                    l3Table[k] & PAGE_FLAGS_MASK & ~PAGE_SIZE_FLAG, PAGE_SIZE * PAGE_ENTRIES,
                                     data)) {
                     done = true;
                   }
@@ -131,9 +126,8 @@ namespace memory {
                     const uint64_t blockIdxL4[] = {i, j, k, l};
                     if (l4Table[l] & PAGE_PRESENT) {
                       if (!leafCallback(pageIndexesToVirtual(blockIdxL4, 4),
-                                        l4Table[l] & ~PAGE_FLAGS_MASK & ~PAGE_FLAGS2_MASK,
-                                        l4Table[l] & PAGE_FLAGS_MASK & ~PAGE_SIZE_FLAG,
-                                        (l4Table[l] & PAGE_FLAGS2_MASK) >> PAGE_FLAGS2_SHIFT, PAGE_SIZE, data)) {
+                                        l4Table[l] & ~PAGE_FLAGS_MASK,
+                                        l4Table[l] & PAGE_FLAGS_MASK & ~PAGE_SIZE_FLAG, PAGE_SIZE, data)) {
                         done = true;
                       }
                     } else if (!missingCallback(pageIndexesToVirtual(blockIdxL4, 4), data)) {
@@ -170,12 +164,11 @@ namespace memory {
           .mapFunc = mapFunc,
         };
 
-    walkPageTableLeafCallback<Data> leafCallback = [](uint64_t virtualAddress, uint64_t physicalAddress, uint8_t flags,
-                                                      uint8_t flags2, uint32_t pageSize, Data *d) -> bool {
+    walkPageTableLeafCallback<Data> leafCallback = [](uint64_t virtualAddress, uint64_t physicalAddress, uint64_t flags,
+                                                      uint32_t pageSize, Data *d) -> bool {
       flags &= ~(PAGE_ACCESSED | PAGE_DIRTY);
       if (d->inBlock) {
-        if (d->currentBlock.physicalEnd + 1 == physicalAddress && d->currentBlock.flags == flags && d->currentBlock.
-            flags2 == flags2) {
+        if (d->currentBlock.physicalEnd + 1 == physicalAddress && d->currentBlock.flags == flags) {
           d->currentBlock.physicalEnd = physicalAddress + pageSize - 1;
           d->currentBlock.virtualEnd = virtualAddress + pageSize - 1;
           d->currentBlock.pageCount += pageSize / PAGE_SIZE;
@@ -191,7 +184,6 @@ namespace memory {
         d->currentBlock.virtualEnd = d->currentBlock.virtualStart + pageSize - 1;
         d->currentBlock.pageCount = pageSize / PAGE_SIZE;
         d->currentBlock.flags = flags;
-        d->currentBlock.flags2 = flags2;
         d->inBlock = true;
       }
       return true;
