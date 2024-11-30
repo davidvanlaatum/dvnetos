@@ -3,7 +3,9 @@
 #include <cstdio>
 #include "Framebuffer.h"
 #include "VirtualConsole.h"
+#ifdef __KERNEL__
 #include "serial/Serial.h"
+#endif
 
 namespace framebuffer {
 #define MAX_RES_WIDTH 1280
@@ -126,9 +128,7 @@ namespace framebuffer {
 #ifdef __KERNEL__
     serial::defaultSerial.write(text, strlen(text));
 #else
-    void VirtualConsole::writeToSerial(const char *text) {
-        // noop
-    }
+    // noop
 #endif
   }
 }
