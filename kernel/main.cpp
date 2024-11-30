@@ -6,6 +6,7 @@
 #include <framebuffer/VirtualConsole.h>
 #include <memory/MemMap.h>
 #include <smbios/smbios.h>
+#include <serial/Serial.h>
 
 #include "utils/panic.h"
 
@@ -128,6 +129,7 @@ extern "C" void kmain() {
 
     framebuffer::defaultVirtualConsole.init();
     memory::memMap.init();
+    serial::defaultSerial.init(memory::hhdm_request.response->offset);
 
     if (dtb.response != nullptr) {
         framebuffer::defaultVirtualConsole.appendFormattedText("DTB at %p\n", dtb.response->dtb_ptr);

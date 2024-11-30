@@ -3,6 +3,7 @@
 #include <cstdio>
 #include "Framebuffer.h"
 #include "VirtualConsole.h"
+#include "serial/Serial.h"
 
 namespace framebuffer {
 #define MAX_RES_WIDTH 1280
@@ -10,9 +11,6 @@ namespace framebuffer {
   constexpr auto bufferSize = (MAX_RES_WIDTH / 8) * (MAX_RES_HEIGHT / 16);
   char buffer[bufferSize];
   VirtualConsole defaultVirtualConsole;
-#ifdef __aarch64__
-  volatile auto *uart_base = reinterpret_cast<volatile uint32_t *>(0x9000000);
-#endif
 
 #ifdef __KERNEL__
   void VirtualConsole::init() {
@@ -124,28 +122,13 @@ namespace framebuffer {
     appendText(buf);
   }
 
-#ifdef __KERNEL__
-#ifdef __x86_64__
-    void VirtualConsole::writeToSerial(const char *text) {
-        uint16_t serialPort = 0x3F8;
-        while (*text) {
-            asm volatile ("outb %0, %1" : : "a"(*text), "Nd"(serialPort));
-            text++;
-        }
-    }
-#elif __aarch64__
   void VirtualConsole::writeToSerial(const char *text) {
-    // while (*text) {
-    // while ((uart_base[6] & 0x20) == 0) {
-    // }
-    // *uart_base = *text;
-    // text++;
-    // }
-  }
-#endif
+#ifdef __KERNEL__
+    serial::defaultSerial.write(text, strlen(text));
 #else
     void VirtualConsole::writeToSerial(const char *text) {
         // noop
     }
 #endif
+  }
 }
