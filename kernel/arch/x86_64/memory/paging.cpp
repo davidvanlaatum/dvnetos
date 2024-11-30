@@ -196,8 +196,7 @@ namespace memory {
   }
 
   void Paging::mapMemory(uint64_t physical_address, uint64_t virtual_address, const size_t pageSize,
-                         const size_t num_pages,
-                         const uint64_t flags) {
+                         const size_t num_pages, const uint64_t flags) {
     framebuffer::defaultVirtualConsole.appendFormattedText(
       "mapping %p-%p to %p-%p (%d) %s\n", virtual_address, virtual_address + (num_pages * PAGE_SIZE) - 1,
       physical_address, physical_address + (num_pages * PAGE_SIZE) - 1, num_pages, tableFlagsToString(flags));

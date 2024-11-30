@@ -31,17 +31,19 @@ namespace smbios {
 
   void SMBIOS::init(uint64_t hhdmOffset) {
     if (smbios_request.response != nullptr) {
-      char buf[128] = {};
-      framebuffer::defaultVirtualConsole.appendText("SMBIOS:\n");
       if (smbios_request.response->entry_64 != nullptr) {
         const auto *entry = reinterpret_cast<Entry64 *>(
           reinterpret_cast<uint64_t>(smbios_request.response->entry_64) + hhdmOffset);
-        ksnprintf(buf, sizeof(buf), "64bit %p\n", entry);
-        framebuffer::defaultVirtualConsole.appendText(buf);
-        framebuffer::defaultVirtualConsole.appendText("SMBIOS 64-bit entry\n");
-        ksnprintf(buf, sizeof(buf), "SMBIOS 64-bit entry: %p\n", entry->table_address/*, entry->,
-                         static_cast<int>(entry->minor_version)*/);
-        framebuffer::defaultVirtualConsole.appendText(buf);
+        memory::paging.mapPartial(reinterpret_cast<uint64_t>(smbios_request.response->entry_64),
+                                  reinterpret_cast<uint64_t>(entry), sizeof(Entry64), 0x700);
+        framebuffer::defaultVirtualConsole.appendFormattedText("SMBIOS 64-bit entry: %d.%d table at %p length %d\n",
+                                                               static_cast<int>(entry->major_version),
+                                                               static_cast<int>(entry->minor_version),
+                                                               entry->table_address, entry->table_length);
+        const auto *table = reinterpret_cast<TableHeader *>(
+          static_cast<uint64_t>(entry->table_address) + hhdmOffset);
+        memory::paging.mapPartial(entry->table_address, reinterpret_cast<uint64_t>(table), entry->table_length, 0x700);
+        dumpTable(table, entry->table_length);
       } else if (smbios_request.response->entry_32 != nullptr) {
         const auto *entry = reinterpret_cast<Entry32 *>(
           reinterpret_cast<uint64_t>(smbios_request.response->entry_32) + hhdmOffset);
