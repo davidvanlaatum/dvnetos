@@ -70,7 +70,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [aarch64, x86_64]
+        arch: [ aarch64, x86_64 ]
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
@@ -100,5 +100,11 @@ jobs:
         uses: janisz/action@v2
         with:
           paths: ${{github.workspace}}/build/junit.xml
+      - name: Upload screenshot
+        uses: actions/upload-artifact@v4
+        id: upload-screenshot
+        with:
+          name: screenshot-${{matrix.arch}}
+          path: build/Testing/Temporary/screenshot.png
       - name: Add image to summary
-        run: echo "![Generated Image](${{ github.server_url }}/${{ github.repository }}/actions/artifacts/${{ steps.upload.outputs.artifact_id }}/Testing/Temporary/screenshot.png)" >> $GITHUB_STEP_SUMMARY
+        run: echo "![Generated Image](${{step.upload-screenshot.outputs.artifact-url})" >> $GITHUB_STEP_SUMMARY
