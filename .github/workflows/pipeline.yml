@@ -100,11 +100,8 @@ jobs:
         uses: janisz/action@v2
         with:
           paths: ${{github.workspace}}/build/junit.xml
-      - name: Upload screenshot
-        uses: actions/upload-artifact@v4
-        id: upload
-        with:
-          name: screenshot-${{matrix.arch}}
-          path: build/Testing/Temporary/screenshot.png
-      - name: Add image to summary
-        run: echo "![Generated Image](${{ github.server_url }}/${{ github.repository }}/actions/artifacts/${{ steps.upload.outputs.artifact-id }}/screenshot.png)" >> $GITHUB_STEP_SUMMARY
+      - name: Add output to summary
+        run: |
+          echo '<details><summary>Code Output</summary><pre style="max-height: 250px; overflow: auto">' >> $GITHUB_STEP_SUMMARY
+          cat ${{github.workspace}}/build/Testing/Temporary/serial.log >> $GITHUB_STEP_SUMMARY
+          echo '</pre></details>' >> $GITHUB_STEP_SUMMARY
