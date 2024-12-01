@@ -63,7 +63,7 @@ namespace smbios {
     } else {
       framebuffer::defaultVirtualConsole.appendText("No SMBIOS\n");
     }
-    framebuffer::defaultVirtualConsole.appendText("SMBIOS end");
+    framebuffer::defaultVirtualConsole.appendText("SMBIOS end\n");
   }
 
 

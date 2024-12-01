@@ -35,7 +35,7 @@ ExternalProject_Add(
     venv
     DOWNLOAD_COMMAND ""
     CONFIGURE_COMMAND ${Python_EXECUTABLE} -m venv .
-    BUILD_COMMAND bin/pip install clang lcov_cobertura setuptools
+    BUILD_COMMAND bin/pip install clang lcov_cobertura setuptools qemu.qmp
     INSTALL_COMMAND ""
     EXCLUDE_FROM_ALL TRUE
 )

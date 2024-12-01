@@ -150,5 +150,6 @@ extern "C" void kmain() {
     }
 
     smbios::defaultSMBIOS.init(memory::hhdm_request.response->offset);
+    framebuffer::defaultVirtualConsole.appendText("start complete\n");
     halt();
 }
