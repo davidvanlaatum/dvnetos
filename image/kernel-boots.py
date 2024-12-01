@@ -62,7 +62,7 @@ class KernelBoots:
         else:
           await asyncio.sleep(0.1)
       else:
-        print("Timeout reached before the kernel reached the specific point.")
+        raise TimeoutError("Timeout reached before the kernel reached the specific point.")
 
   def __enter__(self):
     return self
