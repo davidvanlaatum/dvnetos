@@ -85,7 +85,6 @@ jobs:
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target ovmf -- -j$(nproc)
       - name: Test
         working-directory: ${{github.workspace}}/build
-        continue-on-error: true
         run: ctest --output-on-failure --output-junit junit.xml
       - name: Upload build artifacts
         if: always()
@@ -106,6 +105,3 @@ jobs:
           echo '<details><summary>Code Output</summary><pre style="max-height: 250px; overflow: auto">' >> $GITHUB_STEP_SUMMARY
           cat ${{github.workspace}}/build/Testing/Temporary/serial.log >> $GITHUB_STEP_SUMMARY
           echo '</pre></details>' >> $GITHUB_STEP_SUMMARY
-      - name: Check for errors
-        if: failure()
-        run: exit 1
