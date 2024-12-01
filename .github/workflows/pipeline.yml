@@ -100,3 +100,5 @@ jobs:
         uses: janisz/action@v2
         with:
           paths: ${{github.workspace}}/build/junit.xml
+      - name: Add image to summary
+        run: echo "![Generated Image](build/Testing/Temporary/screenshot.png)" >> $GITHUB_STEP_SUMMARY
