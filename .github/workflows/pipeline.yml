@@ -107,4 +107,4 @@ jobs:
           name: screenshot-${{matrix.arch}}
           path: build/Testing/Temporary/screenshot.png
       - name: Add image to summary
-        run: echo "![Generated Image](${{step.upload-screenshot.outputs.artifact-url}})" >> $GITHUB_STEP_SUMMARY
+        run: echo "![Generated Image](${{steps.upload-screenshot.outputs.artifact-url}})" >> $GITHUB_STEP_SUMMARY
