@@ -25,11 +25,9 @@ jobs:
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -- -j$(nproc)
       - name: Test MemCheck
         working-directory: ${{github.workspace}}/build
-        continue-on-error: true
         run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure --test-action memcheck --output-junit junit.xml
       - name: Test
         working-directory: ${{github.workspace}}/build
-        continue-on-error: true
         run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure --output-junit junit.xml
       - name: Generate Coverage
         working-directory: ${{github.workspace}}/build
@@ -54,12 +52,14 @@ jobs:
         with:
           paths: ${{github.workspace}}/build/junit.xml
       - name: Code Coverage Summary Report
+        if: always()
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
           filename: build/coverage.xml
           format: markdown
           output: both
       - name: Coverage Summary
+        if: always()
         run: cat ${{github.workspace}}/code-coverage-results.md >> $GITHUB_STEP_SUMMARY
   build:
     name: Build
@@ -102,6 +102,7 @@ jobs:
       - name: Add output to summary
         if: always()
         run: |
-          echo '<details><summary>Code Output</summary><pre style="max-height: 250px; overflow: auto">' >> $GITHUB_STEP_SUMMARY
+          file ${{github.workspace}}/build/kernel/kernel >> $GITHUB_STEP_SUMMARY
+          echo '<details><summary>Kernel Output</summary><pre style="max-height: 250px; overflow: auto">' >> $GITHUB_STEP_SUMMARY
           cat ${{github.workspace}}/build/Testing/Temporary/serial.log >> $GITHUB_STEP_SUMMARY
           echo '</pre></details>' >> $GITHUB_STEP_SUMMARY
