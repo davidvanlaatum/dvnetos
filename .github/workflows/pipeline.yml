@@ -102,7 +102,7 @@ jobs:
           paths: ${{github.workspace}}/build/junit.xml
       - name: Upload screenshot
         uses: actions/upload-artifact@v4
-        id: upload-screenshot
+        id: upload
         with:
           name: screenshot-${{matrix.arch}}
           path: build/Testing/Temporary/screenshot.png
