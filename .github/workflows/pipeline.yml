@@ -94,6 +94,7 @@ jobs:
           path: |
             build/Testing
             build/CMakeFiles
+            build/kernel/kernel
       - name: Junit Test Dashboard
         if: always()
         uses: janisz/action@v2
