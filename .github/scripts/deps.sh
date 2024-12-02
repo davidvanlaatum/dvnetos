@@ -26,9 +26,19 @@ EOF
 test -f /usr/share/doc/kitware-archive-keyring/copyright ||
 wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
 
+CLANG_VER=19
+for i in /usr/lib/llvm-*
+do
+  VER=$(basename $i | sed -e 's/llvm-//')
+  if [[ $VER != "$CLANG_VER" ]]
+  then
+    REMOVE="$REMOVE llvm-$VER clang-$VER"
+  fi
+done
+
 apt update
-apt remove clang-16 clang-17 llvm-16 llvm-17
-PACKAGES="cmake libc++-dev ninja-build python3-venv valgrind clang-18 lld-18 libclang-18-dev clang-tools-18"
+apt remove $REMOVE
+PACKAGES="cmake libc++-dev ninja-build python3-venv valgrind clang-$CLANG_VER lld-$CLANG_VER libclang-$CLANG_VER-dev clang-tools-$CLANG_VER"
 if [[ $GITHUB_JOB == "build" ]]; then
     PACKAGES="${PACKAGES} gdisk mtools git qemu-system"
 fi
