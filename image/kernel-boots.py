@@ -88,14 +88,14 @@ class KernelBoots:
         print("Failed to exit, killing the process")
         self.qemu_process.kill()
 
-
 async def main(qemu_cmd):
   with KernelBoots(qemu_cmd) as kernel_boots:
-    await kernel_boots.start_qemu()
-    await kernel_boots.wait_for_output()
-    print("Kernel boots")
-    await kernel_boots.shutdown()
-
+    try:
+      await kernel_boots.start_qemu()
+      await kernel_boots.wait_for_output()
+      print("Kernel boots")
+    finally:
+      await kernel_boots.shutdown()
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Start QEMU with specified arguments.')
