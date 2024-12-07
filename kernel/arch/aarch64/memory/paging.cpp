@@ -138,17 +138,23 @@ namespace memory {
     asm volatile(
       "msr ttbr0_el1, %0\n"
       "msr ttbr1_el1, %1\n"
-      "dsb ish\n" // Data Synchronization Barrier
-      "isb\n" // Instruction Synchronization Barrier
-      "tlbi vmalle1is\n" // Invalidate all TLB entries
-      "dsb ish\n" // Data Synchronization Barrier
-      "isb\n" // Instruction Synchronization Barrier
       :
       : "r"(reinterpret_cast<uint64_t>(root1) - kernelVirtualOffset),
       "r"( reinterpret_cast<uint64_t>(root2) - kernelVirtualOffset)
       : "memory"
     );
+    invalidateCache();
     framebuffer::defaultVirtualConsole.appendText("paging enabled\n");
+  }
+
+  void Paging::invalidateCache() {
+    asm volatile(
+      "dsb ish\n" // Data Synchronization Barrier
+      "isb\n" // Instruction Synchronization Barrier
+      "tlbi vmalle1is\n" // Invalidate all TLB entries
+      "dsb ish\n" // Data Synchronization Barrier
+      "isb\n" // Instruction Synchronization Barrier
+      :::"memory");
   }
 
   void Paging::mapPartial(const uint64_t physical_address, const uint64_t virtual_address, const size_t size,
@@ -165,13 +171,13 @@ namespace memory {
   void Paging::mapMemory(uint64_t physical_address, uint64_t virtual_address, const size_t pageSize,
                          const size_t num_pages, uint64_t flags) {
     framebuffer::defaultVirtualConsole.appendFormattedText(
-      "mapping %p-%p to %p-%p (%d) %s\n", virtual_address, virtual_address + (num_pages * PAGE_SIZE) - 1,
+      "mapping %p-%p to %p-%p (%d) %s", virtual_address, virtual_address + (num_pages * PAGE_SIZE) - 1,
       physical_address, physical_address + (num_pages * PAGE_SIZE) - 1, num_pages, tableFlagsToString(flags));
     if (physical_address % PAGE_SIZE != 0) {
       kpanic("physical address must be page aligned");
     }
     if (virtual_address % PAGE_SIZE != 0) {
-      framebuffer::defaultVirtualConsole.appendFormattedText("virtual address %p is not page aligned %d\n",
+      framebuffer::defaultVirtualConsole.appendFormattedText("\nvirtual address %p is not page aligned %d\n",
                                                              virtual_address, virtual_address % PAGE_SIZE);
       kpanic("virtual address must be page aligned");
     }
@@ -198,9 +204,6 @@ namespace memory {
                  virtual_address, virtual_address % (PAGE_SIZE * PAGE_ENTRIES));
         kassertf(physical_address % (PAGE_SIZE * PAGE_ENTRIES) == 0, "huge page must be page aligned: %p 0x%x",
                  physical_address, physical_address % (PAGE_SIZE * PAGE_ENTRIES));
-        framebuffer::defaultVirtualConsole.appendFormattedText(
-          "mapping huge page at %p-%p/%p-%p\n", virtual_address, virtual_address + (PAGE_SIZE * PAGE_ENTRIES) - 1,
-          physical_address, physical_address + (PAGE_SIZE * PAGE_ENTRIES) - 1);
         setPageTableEntry(pd, idx.l3, 3, virtual_address, physical_address, flags);
         virtual_address += PAGE_SIZE * PAGE_ENTRIES;
         physical_address += PAGE_SIZE * PAGE_ENTRIES;
@@ -218,6 +221,8 @@ namespace memory {
       physical_address += PAGE_SIZE;
       virtual_address += PAGE_SIZE;
     }
+    invalidateCache();
+    framebuffer::defaultVirtualConsole.appendText(" done\n");
   }
 
   uint64_t Paging::pageIndexesToVirtual(const uint64_t l[], const size_t count, const bool higherHalf) const {

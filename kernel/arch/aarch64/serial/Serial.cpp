@@ -1,3 +1,4 @@
+#include <framebuffer/VirtualConsole.h>
 #include "Serial.h"
 #include "cstring"
 #include "memory/paging.h"
@@ -21,17 +22,23 @@ namespace serial {
     void Serial::init(const uint64_t hhdmOffset) {
       memory::paging.mapMemory(getBaseAddr(), getBaseAddr() + hhdmOffset, PAGE_SIZE, 1, 0x700);
       base = adjustPointer(base, hhdmOffset);
-      *adjustPointer(base, CR) = 0x0;
+      if (const auto fr = *adjustPointer(base, FR); fr != 0xFFFFFFFF && fr != 0x00000000) {
+        framebuffer::defaultVirtualConsole.appendFormattedText("FR: %x\n", fr);
 
-      *adjustPointer(base, IBRD) = static_cast<uint32_t>(26);
-      *adjustPointer(base, FBRD) = static_cast<uint32_t>(3);
-      *adjustPointer(base, LCRH) = (1 << 4) | (3 << 5);
+        *adjustPointer(base, CR) = 0x0;
 
-      *adjustPointer(base, CR) = (1 << 0) | (1 << 8) | (1 << 9);
+        *adjustPointer(base, IBRD) = static_cast<uint32_t>(26);
+        *adjustPointer(base, FBRD) = static_cast<uint32_t>(3);
+        *adjustPointer(base, LCRH) = (1 << 4) | (3 << 5);
 
-      enabled = true;
-      write(buffer, bufferUsed);
-      bufferUsed = 0;
+        *adjustPointer(base, CR) = (1 << 0) | (1 << 8) | (1 << 9);
+
+        enabled = true;
+        write(buffer, bufferUsed);
+        bufferUsed = 0;
+      } else {
+        framebuffer::defaultVirtualConsole.appendText("Serial not found\n");
+      }
     }
 
     void Serial::write(const char *text, const size_t length) {

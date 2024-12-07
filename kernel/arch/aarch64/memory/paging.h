@@ -96,6 +96,8 @@ namespace memory {
 
     static void setPageTableEntry(uint64_t *table, uint16_t index, uint8_t level, uint64_t virtualAddress,
                                   uint64_t physicalAddress, uint64_t flags);
+
+    static void invalidateCache();
   };
 
   extern Paging paging;
