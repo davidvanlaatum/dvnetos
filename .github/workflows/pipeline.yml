@@ -104,6 +104,3 @@ jobs:
         if: always()
         run: |
           file ${{github.workspace}}/build/kernel/kernel >> $GITHUB_STEP_SUMMARY
-          echo '<details><summary>Kernel Output</summary><pre style="max-height: 250px; overflow: auto">' >> $GITHUB_STEP_SUMMARY
-          cat ${{github.workspace}}/build/Testing/Temporary/serial.log >> $GITHUB_STEP_SUMMARY
-          echo '</pre></details>' >> $GITHUB_STEP_SUMMARY

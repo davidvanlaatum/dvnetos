@@ -17,6 +17,7 @@ class KernelBoots:
     self.qmp = QMPClient()
     self.serial_log = os.getenv('ARTIFACTS_DIR') + '/serial.log'
     self.summary_path = os.getenv('GITHUB_STEP_SUMMARY')
+    self.serial_output = ""
     # console_handler = logging.StreamHandler()
     # console_handler.setLevel(logging.DEBUG)
     # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -57,15 +58,15 @@ class KernelBoots:
       return
 
   async def wait_for_output(self):
-    serial_output = ""
+    self.serial_output = ""
     start_time = time.time()
     with open(self.serial_log, 'r') as serial_log:
       while time.time() - start_time < self.timeout:
         line = serial_log.readline()
         if line:
           print(line, end="", flush=True)
-          serial_output += line
-          if "start complete" in serial_output:
+          self.serial_output += line
+          if "start complete" in self.serial_output:
             self.logger.info("Kernel startup complete")
             break
         else:
@@ -81,7 +82,7 @@ class KernelBoots:
     try:
       screenshot_path = os.getenv('ARTIFACTS_DIR') + '/screenshot.png'
       await self.qmp.execute('screendump', {'filename': screenshot_path, 'format': 'png'})
-      self.add_image_to_summary(screenshot_path)
+      self.add_to_summary(screenshot_path)
     except Exception as e:
       self.logger.error(f"Error executing screendump command: {e}")
     try:
@@ -89,14 +90,16 @@ class KernelBoots:
     except Exception as e:
       self.logger.error(f"Error executing quit command: {e}")
 
-  def add_image_to_summary(self, image_path):
+  def add_to_summary(self, image_path):
     if not self.summary_path:
       self.logger.info("No summary path provided")
       return
     with open(image_path, 'rb') as image_file:
       image_data = base64.b64encode(image_file.read()).decode('utf-8')
     with open(self.summary_path, 'a') as summary_file:
-      summary_file.write(f"![Kernel Screenshot](data:image/png;base64,{image_data})\n")
+      summary_file.write(f"<img src=\"data:image/png;base64,{image_data}\" />\n")
+      summary_file.write(
+        f"<details><summary>Kernel Output</summary><pre style=\"max-height: 250px; overflow: auto\">{self.serial_output}</pre></details>\n")
     self.logger.info("Wrote screen shot to summary")
 
   def __exit__(self, exc_type, exc_val, exc_tb):
