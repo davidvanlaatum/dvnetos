@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM ubuntu:latest AS base
 RUN apt update && apt install -y ca-certificates gnupg
 ADD https://apt.kitware.com/keys/kitware-archive-latest.asc /tmp/kitware-archive-latest.asc
 RUN cat /tmp/kitware-archive-latest.asc | gpg --dearmor - | tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
@@ -15,13 +15,23 @@ Signed-By: /usr/share/keyrings/kitware-archive-keyring.gpg" > /etc/apt/sources.l
 #Components: main\n\
 #Trusted: yes\n\
 #Options: trusted=yes" > /etc/apt/sources.list.d/llvm.sources && cat /etc/apt/sources.list.d/llvm.sources
-RUN apt update && apt install -y cmake clang-18 lld-18 clang-tools-18 libclang-18-dev libc++-dev gdisk mtools git python3-venv valgrind && ln -sv /usr/lib/llvm-18/bin/ld.lld /usr/bin/ld.lld
-RUN mkdir -p /app/build
+RUN apt update && apt install -y cmake clang-18 lld-18 clang-tools-18 libclang-18-dev libc++-dev gdisk mtools git python3-venv valgrind qemu-system && ln -sv /usr/lib/llvm-18/bin/ld.lld /usr/bin/ld.lld
 COPY . /app
+ENV CTEST_OUTPUT_ON_FAILURE=1 CMAKE_COLOR_DIAGNOSTICS=ON
+
+FROM base AS build
 WORKDIR /app/build
-ENV CTEST_OUTPUT_ON_FAILURE=1 CMAKE_COLOR_DIAGNOSTICS=ON X=1
-RUN cmake .. -DTEST_MODE=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_VERBOSE_MAKEFILE=ON && cmake --build . -j $(nproc) && ctest --output-on-failure --test-action memcheck --output-junit junit.xml
+RUN cmake .. -DTEST_MODE=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_VERBOSE_MAKEFILE=ON && cmake --build . -j $(nproc) && ctest --output-on-failure --test-action memcheck --output-junit junit.xml --no-tests=error
+
+FROM base AS build-x86_64
 WORKDIR /app/build-x86_64
-RUN cmake --version && cmake .. -DCMAKE_BUILD_TYPE=Debug -DARCH=x86_64 && cmake --build . -j $(nproc)
+RUN cmake .. -DCMAKE_BUILD_TYPE=Debug -DARCH=x86_64 && cmake --build . -j $(nproc) && ctest --output-on-failure --output-junit junit.xml --no-tests=error
+
+FROM base AS build-aarch64
 WORKDIR /app/build-aarch64
-RUN cmake .. -DCMAKE_BUILD_TYPE=Debug -DARCH=aarch64 && cmake --build . -j $(nproc)
+RUN cmake .. -DCMAKE_BUILD_TYPE=Debug -DARCH=aarch64 && cmake --build . -j $(nproc) && ctest --output-on-failure --output-junit junit.xml --no-tests=error
+
+FROM base
+COPY --from=build /app/build/ /app/build/
+COPY --from=build-x86_64 /app/build-x86_64/ /app/build-x86_64/
+COPY --from=build-aarch64 /app/build-aarch64/ /app/build-aarch64/

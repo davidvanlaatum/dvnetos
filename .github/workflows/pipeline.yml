@@ -8,6 +8,9 @@ on:
     branches:
       - main
 
+env:
+  CMAKE_COLOR_DIAGNOSTICS: ON
+
 jobs:
   test:
     name: Test
