@@ -1,9 +1,9 @@
-#include <framebuffer/VirtualConsole.h>
 #include "Serial.h"
+#include <framebuffer/VirtualConsole.h>
+#include <memutil.h>
 #include "cstring"
 #include "memory/paging.h"
 #include "utils/panic.h"
-#include <memutil.h>
 
 using memory::addToPointer;
 
@@ -54,5 +54,5 @@ namespace serial {
         bufferUsed += length;
       }
     }
-  }
-}
+  } // namespace aarch64
+} // namespace serial

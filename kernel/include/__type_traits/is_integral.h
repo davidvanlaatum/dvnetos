@@ -3,14 +3,14 @@
 
 namespace std {
   template<class T>
-  struct is_integral : std::bool_constant<
-        requires(T t, T *p, void (*f)(T)) // T* parameter excludes reference types
-        {
-          reinterpret_cast<T>(t); // Exclude class types
-          f(0); // Exclude enumeration types
-          p + t; // Exclude everything not yet excluded but integral types
-        }> {
+  struct is_integral
+      : std::bool_constant<requires(T t, T *p, void (*f)(T)) // T* parameter excludes reference types
+      {
+        reinterpret_cast<T>(t); // Exclude class types
+        f(0); // Exclude enumeration types
+        p + t; // Exclude everything not yet excluded but integral types
+      }> {
   };
-}
+} // namespace std
 
-#endif //IS_INTEGRAL_H
+#endif // IS_INTEGRAL_H

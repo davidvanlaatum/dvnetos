@@ -13,4 +13,4 @@ typedef __INT64_TYPE__ int64_t;
 
 typedef __UINTPTR_TYPE__ uintptr_t;
 
-#endif //STDINT_H
+#endif // STDINT_H

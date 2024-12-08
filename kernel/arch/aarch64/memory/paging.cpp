@@ -1,21 +1,20 @@
-#include <cstring>
+#include "paging.h"
 #include <cstdio>
-#include "limine.h"
+#include <cstring>
 #include <memutil.h>
 #include "framebuffer/VirtualConsole.h"
+#include "limine.h"
 #include "utils/bytes.h"
 #include "utils/panic.h"
-#include "paging.h"
 
 namespace memory {
-  __attribute__((used, section(".limine_requests")))
-  volatile limine_paging_mode_request paging_request = {
-    .id = LIMINE_PAGING_MODE_REQUEST,
-    .revision = 0,
-    .response = nullptr,
-    .mode = LIMINE_PAGING_MODE_AARCH64_4LVL,
-    .max_mode = LIMINE_PAGING_MODE_AARCH64_4LVL,
-    .min_mode = LIMINE_PAGING_MODE_AARCH64_4LVL,
+  __attribute__((used, section(".limine_requests"))) volatile limine_paging_mode_request paging_request = {
+      .id = LIMINE_PAGING_MODE_REQUEST,
+      .revision = 0,
+      .response = nullptr,
+      .mode = LIMINE_PAGING_MODE_AARCH64_4LVL,
+      .max_mode = LIMINE_PAGING_MODE_AARCH64_4LVL,
+      .min_mode = LIMINE_PAGING_MODE_AARCH64_4LVL,
   };
 
   Paging paging;
@@ -49,7 +48,7 @@ namespace memory {
       kpanic("paging mode not supported");
     }
     uint64_t ttbr0, ttbr1;
-    asm volatile ("mrs %0, ttbr0_el1; mrs %1, ttbr1_el1; mrs %2, tcr_el1" : "=r"(ttbr0), "=r"(ttbr1), "=r"(tcr_el1));
+    asm volatile("mrs %0, ttbr0_el1; mrs %1, ttbr1_el1; mrs %2, tcr_el1" : "=r"(ttbr0), "=r"(ttbr1), "=r"(tcr_el1));
 
     Paging tmpPaging;
     tmpPaging.pageTableOffset = hhdmVirtualOffset;
@@ -86,9 +85,8 @@ namespace memory {
     pageTableToRangesCallback<callbackData> callback = [](PageTableRangeData *page_table_range_data,
                                                           callbackData *data) {
       static auto isTypeToMap = [](const uint64_t type) {
-        return type == LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE
-               || type == LIMINE_MEMMAP_KERNEL_AND_MODULES
-               || type == LIMINE_MEMMAP_FRAMEBUFFER;
+        return type == LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE || type == LIMINE_MEMMAP_KERNEL_AND_MODULES ||
+               type == LIMINE_MEMMAP_FRAMEBUFFER;
       };
       static auto rangesOverlap = [](PageTableRangeData *page_table_range_data, limine_memmap_entry *entry) {
         return (page_table_range_data->physicalStart <= entry->base + entry->length &&
@@ -103,17 +101,13 @@ namespace memory {
         if (rangesOverlap(page_table_range_data, data->mappings[i])) {
           if (isTypeToMap(data->mappings[i]->type)) {
             char buff[32];
-            kprintf(
-              "block %p-%p/%p-%p %lu(%s) %s %lu\n", toPtr(page_table_range_data->virtualStart),
-              toPtr(page_table_range_data->virtualEnd), toPtr(page_table_range_data->physicalStart),
-              toPtr(page_table_range_data->physicalEnd), page_table_range_data->pageCount,
-              bytesToHumanReadable(buff, sizeof(buff), page_table_range_data->pageCount * PAGE_SIZE),
-              tableFlagsToString(page_table_range_data->flags),
-              data->mappings[i]->type);
-            data->paging->mapMemory(page_table_range_data->physicalStart,
-                                    page_table_range_data->virtualStart,
-                                    page_table_range_data->pageSize,
-                                    page_table_range_data->pageCount,
+            kprintf("block %p-%p/%p-%p %lu(%s) %s %lu\n", toPtr(page_table_range_data->virtualStart),
+                    toPtr(page_table_range_data->virtualEnd), toPtr(page_table_range_data->physicalStart),
+                    toPtr(page_table_range_data->physicalEnd), page_table_range_data->pageCount,
+                    bytesToHumanReadable(buff, sizeof(buff), page_table_range_data->pageCount * PAGE_SIZE),
+                    tableFlagsToString(page_table_range_data->flags), data->mappings[i]->type);
+            data->paging->mapMemory(page_table_range_data->physicalStart, page_table_range_data->virtualStart,
+                                    page_table_range_data->pageSize, page_table_range_data->pageCount,
                                     page_table_range_data->flags);
             mapped = true;
             break;
@@ -122,12 +116,11 @@ namespace memory {
       }
       if (!mapped && page_table_range_data->pageCount > 2) {
         char buff[32];
-        kprintf(
-          "not mapping %p-%p/%p-%p %lu(%s) %s\n", toPtr(page_table_range_data->virtualStart),
-          toPtr(page_table_range_data->virtualEnd), toPtr(page_table_range_data->physicalStart),
-          toPtr(page_table_range_data->physicalEnd), page_table_range_data->pageCount,
-          bytesToHumanReadable(buff, sizeof(buff), page_table_range_data->pageCount * PAGE_SIZE),
-          tableFlagsToString(page_table_range_data->flags));
+        kprintf("not mapping %p-%p/%p-%p %lu(%s) %s\n", toPtr(page_table_range_data->virtualStart),
+                toPtr(page_table_range_data->virtualEnd), toPtr(page_table_range_data->physicalStart),
+                toPtr(page_table_range_data->physicalEnd), page_table_range_data->pageCount,
+                bytesToHumanReadable(buff, sizeof(buff), page_table_range_data->pageCount * PAGE_SIZE),
+                tableFlagsToString(page_table_range_data->flags));
       }
     };
     mapPhysicalToVirtual<callbackData> mapper = [](const uint64_t v, callbackData *d) {
@@ -136,26 +129,24 @@ namespace memory {
     tmpPaging.pageTableToRanges(mapper, callback, &data);
     kprintf("new paging table created at %p/%p using %d temporary tables\n", toPtr(root1), toPtr(root2),
             initialPoolUsedCount);
-    asm volatile(
-      "msr ttbr0_el1, %0\n"
+    asm volatile("msr ttbr0_el1, %0\n"
       "msr ttbr1_el1, %1\n"
       :
       : "r"(reinterpret_cast<uint64_t>(root1) - kernelVirtualOffset),
-      "r"( reinterpret_cast<uint64_t>(root2) - kernelVirtualOffset)
-      : "memory"
-    );
+      "r"(reinterpret_cast<uint64_t>(root2) - kernelVirtualOffset)
+      : "memory");
     invalidateCache();
     kprint("paging enabled\n");
   }
 
   void Paging::invalidateCache() {
-    asm volatile(
-      "dsb ish\n" // Data Synchronization Barrier
+    asm volatile("dsb ish\n" // Data Synchronization Barrier
       "isb\n" // Instruction Synchronization Barrier
       "tlbi vmalle1is\n" // Invalidate all TLB entries
       "dsb ish\n" // Data Synchronization Barrier
       "isb\n" // Instruction Synchronization Barrier
-      :::"memory");
+      ::
+      : "memory");
   }
 
   void Paging::mapPartial(const uint64_t physical_address, const uint64_t virtual_address, const size_t size,
@@ -171,10 +162,9 @@ namespace memory {
 
   void Paging::mapMemory(uint64_t physical_address, uint64_t virtual_address, const size_t pageSize,
                          const size_t num_pages, uint64_t flags) {
-    kprintf(
-      "mapping %p-%p to %p-%p (%lu) %s", toPtr(virtual_address), toPtr(virtual_address + (num_pages * pageSize) - 1),
-      toPtr(physical_address), toPtr(physical_address + (num_pages * pageSize) - 1), num_pages,
-      tableFlagsToString(flags));
+    kprintf("mapping %p-%p to %p-%p (%lu) %s", toPtr(virtual_address),
+            toPtr(virtual_address + (num_pages * pageSize) - 1), toPtr(physical_address),
+            toPtr(physical_address + (num_pages * pageSize) - 1), num_pages, tableFlagsToString(flags));
     if (physical_address % pageSize != 0) {
       kpanic("physical address must be page aligned");
     }
@@ -247,10 +237,9 @@ namespace memory {
       }
       const auto pd = reinterpret_cast<uint64_t *>(adjustPageTablePhysicalToVirtual(pdpt[idx.l2] & ~PAGE_FLAGS_MASK));
       if (pageSize == PAGE_SIZE * PAGE_ENTRIES) {
-        kassertf(virtual_address % pageSize == 0, "huge page must be page aligned: %p 0x%x",
-                 toPtr(virtual_address), static_cast<unsigned>(virtual_address % pageSize));
-        kassertf((pd[idx.l3] & PAGE_TABLE) == 0, "huge page must not have a page table: %p",
-                 toPtr(virtual_address));
+        kassertf(virtual_address % pageSize == 0, "huge page must be page aligned: %p 0x%x", toPtr(virtual_address),
+                 static_cast<unsigned>(virtual_address % pageSize));
+        kassertf((pd[idx.l3] & PAGE_TABLE) == 0, "huge page must not have a page table: %p", toPtr(virtual_address));
         clearPageTableEntry(pd, idx.l3);
         virtual_address += pageSize;
         continue;
@@ -291,13 +280,8 @@ namespace memory {
   }
 
   Paging::virtualToPageIndexes_t Paging::virtualToPageIndexes(const uint64_t virtualAddress) const {
-    return {
-      virtualAddress >= higherHalfOffset,
-      (virtualAddress >> 39) & 0x1FF,
-      (virtualAddress >> 30) & 0x1FF,
-      (virtualAddress >> 21) & 0x1FF,
-      (virtualAddress >> 12) & 0x1FF
-    };
+    return {virtualAddress >= higherHalfOffset, (virtualAddress >> 39) & 0x1FF, (virtualAddress >> 30) & 0x1FF,
+            (virtualAddress >> 21) & 0x1FF, (virtualAddress >> 12) & 0x1FF};
   }
 
   char *Paging::tableFlagsToString(const uint64_t flags) {
@@ -316,8 +300,9 @@ namespace memory {
     return buf;
   }
 
-  void Paging::setPageTableEntry(uint64_t *table, const uint16_t index, uint8_t level,
-                                 const uint64_t virtualAddress, const uint64_t physicalAddress, const uint64_t flags) {
+  void Paging::setPageTableEntry(uint64_t *table, const uint16_t index, const uint8_t level,
+                                 const uint64_t virtualAddress,
+                                 const uint64_t physicalAddress, const uint64_t flags) {
     const uint64_t newValue = (physicalAddress & PAGE_ADDR_MASK) | PAGE_VALID | flags | (level == 4 ? PAGE_TABLE : 0);
     if (table[index] != 0 && table[index] != newValue) {
       kprintf("attempted to overwrite page table entry for %p from %p to %p", toPtr(virtualAddress),
@@ -325,10 +310,8 @@ namespace memory {
       const auto oldFlags = table[index] & PAGE_FLAGS_MASK & ~(PAGE_ACCESSED | PAGE_DIRTY);
       const auto newFlags = newValue & PAGE_FLAGS_MASK & ~(PAGE_ACCESSED | PAGE_DIRTY);
       if (oldFlags != newFlags) {
-        kprintf(" old flags %s", tableFlagsToString(
-                  oldFlags & PAGE_FLAGS_MASK));
-        kprintf(" new flags %s", tableFlagsToString(
-                  newFlags & PAGE_FLAGS_MASK));
+        kprintf(" old flags %s", tableFlagsToString(oldFlags & PAGE_FLAGS_MASK));
+        kprintf(" new flags %s", tableFlagsToString(newFlags & PAGE_FLAGS_MASK));
       }
       kprint("\n");
       kpanic("page table entry already exists");
@@ -336,7 +319,5 @@ namespace memory {
     table[index] = newValue;
   }
 
-  void Paging::clearPageTableEntry(uint64_t *table, const uint16_t index) {
-    table[index] = 0;
-  }
-}
+  void Paging::clearPageTableEntry(uint64_t *table, const uint16_t index) { table[index] = 0; }
+} // namespace memory

@@ -12,25 +12,6 @@ if (NOT TEST_MODE)
   find_program(QEMU_SYSTEM_PATH qemu-system-${ARCH})
   find_program(QEMU_IMG_PATH qemu-img)
 
-  include(ExternalProject)
-  ExternalProject_Add(
-      limine
-      GIT_REPOSITORY https://github.com/limine-bootloader/limine.git
-      GIT_TAG v8.x-binary
-      GIT_SHALLOW TRUE
-      BUILD_COMMAND ${MAKE_EXE}
-      CONFIGURE_COMMAND ""
-      STEP_TARGETS build
-      BUILD_IN_SOURCE TRUE
-      INSTALL_COMMAND ""
-      GIT_PROGRESS TRUE
-      USES_TERMINAL_DOWNLOAD TRUE
-      USES_TERMINAL_UPDATE TRUE
-      EXCLUDE_FROM_ALL TRUE
-  )
-
-  ExternalProject_Get_Property(limine SOURCE_DIR)
-  set(LIMINE_PATH ${SOURCE_DIR})
 
   if (ARCH STREQUAL "aarch64")
     set(RPI_VERSION 4 CACHE STRING "Raspberry Pi version")
@@ -68,7 +49,7 @@ if (NOT TEST_MODE)
   if (ARCH STREQUAL "x86_64")
     add_custom_command(
         OUTPUT image.hdd
-        COMMAND ${LIMINE_PATH}/limine bios-install image.hdd
+        COMMAND ${LIMINE_PATH}/bin/limine bios-install image.hdd
         APPEND
     )
   endif ()
@@ -85,15 +66,15 @@ if (NOT TEST_MODE)
   if (ARCH STREQUAL "x86_64")
     add_custom_command(
         OUTPUT image.hdd
-        COMMAND ${MCOPY_PATH} -i image.hdd@@1M ${LIMINE_PATH}/limine-bios.sys ::/boot/limine
-        COMMAND ${MCOPY_PATH} -i image.hdd@@1M ${LIMINE_PATH}/BOOTX64.EFI ::/EFI/BOOT
-        COMMAND ${MCOPY_PATH} -i image.hdd@@1M ${LIMINE_PATH}/BOOTIA32.EFI ::/EFI/BOOT
+        COMMAND ${MCOPY_PATH} -i image.hdd@@1M ${LIMINE_PATH}/share/limine/limine-bios.sys ::/boot/limine
+        COMMAND ${MCOPY_PATH} -i image.hdd@@1M ${LIMINE_PATH}/share/limine/BOOTX64.EFI ::/EFI/BOOT
+        COMMAND ${MCOPY_PATH} -i image.hdd@@1M ${LIMINE_PATH}/share/limine/BOOTIA32.EFI ::/EFI/BOOT
         APPEND
     )
   elseif (ARCH STREQUAL "aarch64")
     add_custom_command(
         OUTPUT image.hdd
-        COMMAND ${MCOPY_PATH} -i image.hdd@@1M ${LIMINE_PATH}/BOOTAA64.EFI ::/EFI/BOOT
+        COMMAND ${MCOPY_PATH} -i image.hdd@@1M ${LIMINE_PATH}/share/limine/BOOTAA64.EFI ::/EFI/BOOT
         DEPENDS rpi-uefi
         APPEND
     )

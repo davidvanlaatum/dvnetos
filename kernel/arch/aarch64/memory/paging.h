@@ -9,8 +9,7 @@ struct limine_memmap_entry;
 namespace memory {
   class Paging {
   public:
-    void init(size_t count, limine_memmap_entry **mappings, uint64_t hhdmVirtualOffset,
-              uint64_t kernelVirtualOffset);
+    void init(size_t count, limine_memmap_entry **mappings, uint64_t hhdmVirtualOffset, uint64_t kernelVirtualOffset);
 
     // map a physical address to a virtual address that doesn't have to be page aligned
     void mapPartial(uint64_t physical_address, uint64_t virtual_address, size_t size, uint64_t flags);
@@ -20,9 +19,7 @@ namespace memory {
 
     void unmapMemory(uint64_t virtual_address, size_t num_pages, size_t pageSize);
 
-    [[nodiscard]] static uint64_t makePageAligned(const uint64_t address) {
-      return address & ~0xFFFull;
-    }
+    [[nodiscard]] static uint64_t makePageAligned(const uint64_t address) { return address & ~0xFFFull; }
 
     static constexpr size_t PAGE_ENTRIES = PAGE_SIZE / sizeof(uint64_t);
     static constexpr uint64_t PAGE_VALID = 1 << 0;
@@ -53,7 +50,7 @@ namespace memory {
     using pageTableToRangesCallback = void (*)(PageTableRangeData *, T *);
 
     template<typename T>
-    using mapPhysicalToVirtual = void *(*)(uint64_t physical, T *data);
+    using mapPhysicalToVirtual = void *(*) (uint64_t physical, T *data);
 
     template<typename T>
     void pageTableToRanges(mapPhysicalToVirtual<T> mapFunc, pageTableToRangesCallback<T> callback, T *data);
@@ -65,8 +62,7 @@ namespace memory {
     using walkPageTableLeafMissingCallback = bool (*)(uint64_t virtualAddress, T *data);
 
     template<typename T>
-    void walkPageTableLeaf(mapPhysicalToVirtual<T> mapFunc,
-                           walkPageTableLeafCallback<T> leafCallback,
+    void walkPageTableLeaf(mapPhysicalToVirtual<T> mapFunc, walkPageTableLeafCallback<T> leafCallback,
                            walkPageTableLeafMissingCallback<T> missingCallback, T *data);
 
     template<typename T>
@@ -88,13 +84,9 @@ namespace memory {
 
     static char *tableFlagsToString(uint64_t flags);
 
-    [[nodiscard]] uint64_t adjustPageTablePhysicalToVirtual(const uint64_t in) const {
-      return in + pageTableOffset;
-    }
+    [[nodiscard]] uint64_t adjustPageTablePhysicalToVirtual(const uint64_t in) const { return in + pageTableOffset; }
 
-    [[nodiscard]] uint64_t adjustPageTableVirtualToPhysical(const uint64_t in) const {
-      return in - pageTableOffset;
-    }
+    [[nodiscard]] uint64_t adjustPageTableVirtualToPhysical(const uint64_t in) const { return in - pageTableOffset; }
 
     static void setPageTableEntry(uint64_t *table, uint16_t index, uint8_t level, uint64_t virtualAddress,
                                   uint64_t physicalAddress, uint64_t flags);
@@ -121,8 +113,8 @@ namespace memory {
   }
 
   template<typename T>
-  bool Paging::walkPageTableLeaf(const uint64_t *table, const bool higherHalf,
-                                 const mapPhysicalToVirtual<T> mapFunc, const walkPageTableLeafCallback<T> leafCallback,
+  bool Paging::walkPageTableLeaf(const uint64_t *table, const bool higherHalf, const mapPhysicalToVirtual<T> mapFunc,
+                                 const walkPageTableLeafCallback<T> leafCallback,
                                  const walkPageTableLeafMissingCallback<T> missingCallback, T *data) {
     for (uint64_t i = 0; i < PAGE_ENTRIES; i++) {
       auto l1Virtual = pageIndexesToVirtual(&i, 1, higherHalf);
@@ -144,8 +136,8 @@ namespace memory {
               auto l3Virtual = pageIndexesToVirtual(blockIdxL3, 3, higherHalf);
               if (l3Table[k] & PAGE_VALID) {
                 if ((l3Table[k] & PAGE_TABLE) == 0) {
-                  if (!leafCallback(l3Virtual, l3Table[k] & PAGE_ADDR_MASK,
-                                    l3Table[k] & PAGE_FLAGS_MASK, PAGE_SIZE * PAGE_ENTRIES, data)) {
+                  if (!leafCallback(l3Virtual, l3Table[k] & PAGE_ADDR_MASK, l3Table[k] & PAGE_FLAGS_MASK,
+                                    PAGE_SIZE * PAGE_ENTRIES, data)) {
                     return true;
                   }
                 } else {
@@ -155,8 +147,7 @@ namespace memory {
                     const auto l4Virtual = pageIndexesToVirtual(blockIdxL4, 4, higherHalf);
                     if (l4Table[l] & PAGE_VALID) {
                       if (!leafCallback(l4Virtual, l4Table[l] & PAGE_ADDR_MASK,
-                                        l4Table[l] & PAGE_FLAGS_MASK & ~PAGE_VALID & ~PAGE_TABLE,
-                                        PAGE_SIZE, data)) {
+                                        l4Table[l] & PAGE_FLAGS_MASK & ~PAGE_VALID & ~PAGE_TABLE, PAGE_SIZE, data)) {
                         return true;
                       }
                     } else if (!missingCallback(l4Virtual, data)) {
@@ -190,17 +181,17 @@ namespace memory {
       pageTableToRangesCallback<T> callback;
       mapPhysicalToVirtual<T> mapFunc;
     } lData = {
-          .data = data,
-          .callback = callback,
-          .mapFunc = mapFunc,
-        };
+        .data = data,
+        .callback = callback,
+        .mapFunc = mapFunc,
+    };
 
     walkPageTableLeafCallback<Data> leafCallback = [](uint64_t virtualAddress, uint64_t physicalAddress, uint64_t flags,
                                                       uint32_t pageSize, Data *d) -> bool {
       // flags &= ~(PAGE_ACCESSED | PAGE_DIRTY);
       if (d->inBlock) {
-        if (d->currentBlock.physicalEnd + 1 == physicalAddress && d->currentBlock.flags == flags && d->currentBlock.
-            pageSize == pageSize) {
+        if (d->currentBlock.physicalEnd + 1 == physicalAddress && d->currentBlock.flags == flags &&
+            d->currentBlock.pageSize == pageSize) {
           d->currentBlock.physicalEnd = physicalAddress + pageSize - 1;
           d->currentBlock.virtualEnd = virtualAddress + pageSize - 1;
           ++d->currentBlock.pageCount;
@@ -228,10 +219,10 @@ namespace memory {
       }
       return true;
     };
-    mapPhysicalToVirtual<Data> localMap = [](uint64_t physical, Data *d) -> void *{
+    mapPhysicalToVirtual<Data> localMap = [](uint64_t physical, Data *d) -> void * {
       return reinterpret_cast<void *>(d->mapFunc(physical, d->data));
     };
     walkPageTableLeaf(localMap, leafCallback, missingCallback, &lData);
   }
-}
-#endif //PAGING_H
+} // namespace memory
+#endif // PAGING_H

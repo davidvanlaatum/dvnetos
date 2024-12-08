@@ -17,5 +17,5 @@ namespace memory {
   void *toPtr(T ptr) {
     return reinterpret_cast<void *>(ptr);
   }
-}
-#endif //MEMUTIL_H
+} // namespace memory
+#endif // MEMUTIL_H

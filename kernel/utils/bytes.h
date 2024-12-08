@@ -5,4 +5,4 @@
 
 const char *bytesToHumanReadable(char *buf, size_t len, uint64_t bytes);
 
-#endif //BYTES_H
+#endif // BYTES_H

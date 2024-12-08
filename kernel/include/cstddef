@@ -4,8 +4,8 @@
 #include <stddef.h>
 
 namespace std {
-    typedef decltype(nullptr) nullptr_t;
-    using ::size_t;
-}
+  typedef decltype(nullptr) nullptr_t;
+  using ::size_t;
+} // namespace std
 
-#endif //CSTDDEF_H
+#endif // CSTDDEF_H

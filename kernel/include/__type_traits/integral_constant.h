@@ -15,6 +15,6 @@ namespace std {
   using false_type = std::integral_constant<bool, false>;
   template<bool B>
   using bool_constant = integral_constant<bool, B>;
-}
+} // namespace std
 
-#endif //INTEGRAL_CONSTANT_H
+#endif // INTEGRAL_CONSTANT_H

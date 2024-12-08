@@ -1,8 +1,8 @@
-#include <cstring>
+#include "VirtualConsole.h"
 #include <cstdarg>
 #include <cstdio>
+#include <cstring>
 #include "Framebuffer.h"
-#include "VirtualConsole.h"
 #ifdef __KERNEL__
 #include "serial/Serial.h"
 #endif
@@ -131,4 +131,4 @@ namespace framebuffer {
     // noop
 #endif
   }
-}
+} // namespace framebuffer

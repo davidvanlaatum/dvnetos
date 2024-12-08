@@ -5,7 +5,6 @@ cus_target_sources(kernel
     cstdint
     cstdio
     cstring
-    limine.h
     stdarg.h
     stddef.h
     stdint.h

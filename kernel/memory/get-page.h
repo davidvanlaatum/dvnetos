@@ -6,4 +6,4 @@
 void *getPage(size_t count);
 void freePage(void *ptr);
 
-#endif //GET_PAGE_H
+#endif // GET_PAGE_H

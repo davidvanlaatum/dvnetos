@@ -3,4 +3,4 @@
 
 #define alloca(size) __builtin_alloca(size)
 
-#endif //ALLOCA_H
+#endif // ALLOCA_H

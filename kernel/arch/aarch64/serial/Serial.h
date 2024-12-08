@@ -7,9 +7,8 @@ namespace serial {
   namespace aarch64 {
     class Serial {
     public:
-      explicit Serial(volatile uint32_t *base, char *buffer, const size_t size) : base(base), buffer(buffer),
-        bufferSize(size) {
-      }
+      explicit Serial(volatile uint32_t *base, char *buffer, const size_t size) :
+          base(base), buffer(buffer), bufferSize(size) {}
 
       void init(uint64_t hhdmOffset);
 
@@ -24,11 +23,11 @@ namespace serial {
 
       [[nodiscard]] uint64_t getBaseAddr() const { return reinterpret_cast<uint64_t>(base); }
     };
-  }
+  } // namespace aarch64
 
   using Serial = aarch64::Serial;
 
   extern Serial defaultSerial;
-} // serial
+} // namespace serial
 
-#endif //SERIAL_H
+#endif // SERIAL_H

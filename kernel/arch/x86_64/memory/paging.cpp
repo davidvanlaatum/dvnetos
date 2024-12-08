@@ -1,20 +1,19 @@
+#include "paging.h"
 #include <cstring>
 #include <memutil.h>
-#include "limine.h"
 #include "framebuffer/VirtualConsole.h"
+#include "limine.h"
 #include "utils/bytes.h"
 #include "utils/panic.h"
-#include "paging.h"
 
 namespace memory {
-  __attribute__((used, section(".limine_requests")))
-  volatile limine_paging_mode_request paging_request = {
-    .id = LIMINE_PAGING_MODE_REQUEST,
-    .revision = 0,
-    .response = nullptr,
-    .mode = LIMINE_PAGING_MODE_X86_64_4LVL,
-    .max_mode = LIMINE_PAGING_MODE_X86_64_4LVL,
-    .min_mode = LIMINE_PAGING_MODE_X86_64_4LVL,
+  __attribute__((used, section(".limine_requests"))) volatile limine_paging_mode_request paging_request = {
+      .id = LIMINE_PAGING_MODE_REQUEST,
+      .revision = 0,
+      .response = nullptr,
+      .mode = LIMINE_PAGING_MODE_X86_64_4LVL,
+      .max_mode = LIMINE_PAGING_MODE_X86_64_4LVL,
+      .min_mode = LIMINE_PAGING_MODE_X86_64_4LVL,
   };
 
   Paging paging;
@@ -58,12 +57,8 @@ namespace memory {
   }
 
   Paging::virtualToPageIndexes_t Paging::virtualToPageIndexes(const uint64_t virtualAddress) {
-    return {
-      (virtualAddress >> 39) & 0x1FF,
-      (virtualAddress >> 30) & 0x1FF,
-      (virtualAddress >> 21) & 0x1FF,
-      (virtualAddress >> 12) & 0x1FF
-    };
+    return {(virtualAddress >> 39) & 0x1FF, (virtualAddress >> 30) & 0x1FF, (virtualAddress >> 21) & 0x1FF,
+            (virtualAddress >> 12) & 0x1FF};
   }
 
   char *Paging::tableFlagsToString(const uint64_t flags) {
@@ -111,7 +106,7 @@ namespace memory {
     }
     uint64_t cr3;
     asm volatile("mov %%cr3, %0" : "=r"(cr3));
-    kprintf("current cr3: %p/%p initial pool %p\n", toPtr(cr3), addToPointer( toPtr(cr3), hhdmVirtualOffset),
+    kprintf("current cr3: %p/%p initial pool %p\n", toPtr(cr3), addToPointer(toPtr(cr3), hhdmVirtualOffset),
             toPtr(initialPool));
 
     root = static_cast<uint64_t *>(GetPagePtr(1));
@@ -128,9 +123,8 @@ namespace memory {
     pageTableToRangesCallback<callbackData> callback = [](PageTableRangeData *page_table_range_data,
                                                           callbackData *data) {
       static auto isTypeToMap = [](const uint64_t type) {
-        return type == LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE
-               || type == LIMINE_MEMMAP_KERNEL_AND_MODULES
-               || type == LIMINE_MEMMAP_FRAMEBUFFER;
+        return type == LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE || type == LIMINE_MEMMAP_KERNEL_AND_MODULES ||
+               type == LIMINE_MEMMAP_FRAMEBUFFER;
       };
       static auto rangesOverlap = [](PageTableRangeData *page_table_range_data, limine_memmap_entry *entry) {
         return (page_table_range_data->physicalStart <= entry->base + entry->length &&
@@ -149,12 +143,9 @@ namespace memory {
                     toPtr(page_table_range_data->virtualEnd), toPtr(page_table_range_data->physicalStart),
                     toPtr(page_table_range_data->physicalEnd), page_table_range_data->pageCount,
                     bytesToHumanReadable(buff, sizeof(buff), page_table_range_data->pageCount * PAGE_SIZE),
-                    tableFlagsToString(page_table_range_data->flags),
-                    data->mappings[i]->type);
-            data->paging->mapMemory(page_table_range_data->physicalStart,
-                                    page_table_range_data->virtualStart,
-                                    page_table_range_data->pageSize,
-                                    page_table_range_data->pageCount,
+                    tableFlagsToString(page_table_range_data->flags), data->mappings[i]->type);
+            data->paging->mapMemory(page_table_range_data->physicalStart, page_table_range_data->virtualStart,
+                                    page_table_range_data->pageSize, page_table_range_data->pageCount,
                                     page_table_range_data->flags);
             mapped = true;
             break;
@@ -219,8 +210,8 @@ namespace memory {
       if (!(pdpt[idx.l2] & PAGE_PRESENT)) {
         auto *new_pd = static_cast<uint64_t *>(GetPagePtr(1));
         memset(new_pd, 0, PAGE_SIZE);
-        pdpt[idx.l2] = adjustPageTableVirtualToPhysical(reinterpret_cast<uint64_t>(new_pd)) | PAGE_PRESENT | PAGE_WRITE
-                       | PAGE_USER;
+        pdpt[idx.l2] = adjustPageTableVirtualToPhysical(reinterpret_cast<uint64_t>(new_pd)) | PAGE_PRESENT |
+                       PAGE_WRITE | PAGE_USER;
       }
       const auto pd = reinterpret_cast<uint64_t *>(adjustPageTablePhysicalToVirtual(pdpt[idx.l2] & ~PAGE_FLAGS_MASK));
 
@@ -261,14 +252,12 @@ namespace memory {
       const auto oldFlags = table[index] & PAGE_FLAGS_MASK & ~(PAGE_ACCESSED | PAGE_DIRTY);
       const auto newFlags = newValue & PAGE_FLAGS_MASK & ~(PAGE_ACCESSED | PAGE_DIRTY);
       if (oldFlags != newFlags) {
-        kprintf(" old flags %s", tableFlagsToString(
-                  oldFlags & PAGE_FLAGS_MASK));
-        kprintf(" new flags %s", tableFlagsToString(
-                  newFlags & PAGE_FLAGS_MASK));
+        kprintf(" old flags %s", tableFlagsToString(oldFlags & PAGE_FLAGS_MASK));
+        kprintf(" new flags %s", tableFlagsToString(newFlags & PAGE_FLAGS_MASK));
       }
       kprint("\n");
       kpanic("page table entry already exists");
     }
     table[index] = newValue;
   }
-}
+} // namespace memory

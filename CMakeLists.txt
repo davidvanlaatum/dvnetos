@@ -151,6 +151,29 @@ if (TEST_MODE)
   add_compile_options_if_supported(CXX -fprofile-instr-generate COVERAGE_CXX_FLAGS)
   add_compile_options_if_supported(CXX -fcoverage-mapping COVERAGE_CXX_FLAGS)
   cmake_pop_check_state()
+else ()
+  find_program(MAKE_EXE NAMES gmake make REQUIRED)
+  include(ExternalProject)
+  ExternalProject_Add(
+      limine
+      GIT_REPOSITORY https://github.com/limine-bootloader/limine.git
+      GIT_TAG v8.x-binary
+      GIT_SHALLOW TRUE
+      BUILD_COMMAND ${MAKE_EXE}
+      CONFIGURE_COMMAND ""
+      STEP_TARGETS download update
+      BUILD_IN_SOURCE TRUE
+      INSTALL_COMMAND ${MAKE_EXE} install PREFIX=<INSTALL_DIR>
+      GIT_PROGRESS TRUE
+      USES_TERMINAL_DOWNLOAD TRUE
+      USES_TERMINAL_UPDATE TRUE
+      EXCLUDE_FROM_ALL TRUE
+  )
+  ExternalProject_Get_Property(limine INSTALL_DIR)
+  set(LIMINE_PATH ${INSTALL_DIR})
+  add_library(limine-bootloader INTERFACE)
+  target_include_directories(limine-bootloader INTERFACE ${LIMINE_PATH}/include)
+  add_dependencies(limine-bootloader limine)
 endif ()
 
 add_subdirectory(tools)
@@ -194,6 +217,6 @@ if (CLANG_FORMAT)
   get_all_sources(SOURCES)
   list(JOIN SOURCES "\n" SOURCES)
   file(WRITE ${CMAKE_BINARY_DIR}/sources.txt "${SOURCES}\n")
-  add_custom_target(format COMMAND ${CLANG_FORMAT} @${CMAKE_BINARY_DIR}/sources.txt)
+  add_custom_target(format COMMAND ${CLANG_FORMAT} --verbose -i @${CMAKE_BINARY_DIR}/sources.txt)
 endif ()
 check_for_missing_sources()

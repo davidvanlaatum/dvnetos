@@ -10,9 +10,9 @@ namespace serial {
 
     void Serial::write(const char *text, size_t length) {
       while (*text) {
-        asm volatile ("outb %0, %1" : : "a"(*text), "Nd"(base));
+        asm volatile("outb %0, %1" : : "a"(*text), "Nd"(base));
         text++;
       }
     }
-  }
-}
+  } // namespace x86_64
+} // namespace serial

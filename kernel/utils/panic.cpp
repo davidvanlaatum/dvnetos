@@ -1,15 +1,14 @@
 #include "utils/panic.h"
-
 #include "alloca.h"
 #include "cstdarg"
-#include "stdio.h"
 #include "framebuffer/VirtualConsole.h"
+#include "stdio.h"
 
 void dumpStack(int drop) {
   void *frame_pointer;
 #ifdef __x86_64__
   asm("mov %%rbp, %0" : "=r"(frame_pointer));
-#elifdef  __aarch64__
+#elifdef __aarch64__
   asm("mov %0, x29" : "=r"(frame_pointer));
 #else
 #error "Unsupported architecture"
@@ -51,12 +50,12 @@ void panicf(const char *file, const uint32_t line, const char *fmt, ...) {
 
 [[noreturn]] void halt() {
   for (;;) {
-#if defined (__x86_64__)
-    asm ("hlt");
-#elif defined (__aarch64__) || defined (__riscv)
-    asm ("wfi");
-#elif defined (__loongarch64)
-        asm ("idle 0");
+#if defined(__x86_64__)
+    asm("hlt");
+#elif defined(__aarch64__) || defined(__riscv)
+    asm("wfi");
+#elif defined(__loongarch64)
+    asm("idle 0");
 #endif
   }
 }

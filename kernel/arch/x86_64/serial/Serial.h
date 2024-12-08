@@ -6,8 +6,7 @@ namespace serial {
   namespace x86_64 {
     class Serial {
     public:
-      explicit Serial(const uint16_t base) : base(base) {
-      }
+      explicit Serial(const uint16_t base) : base(base) {}
 
       void init(uint64_t hhdnOffset);
 
@@ -16,12 +15,12 @@ namespace serial {
     private:
       uint16_t base;
     };
-  }
+  } // namespace x86_64
 
   using Serial = x86_64::Serial;
 
   extern Serial defaultSerial;
-}
+} // namespace serial
 
 
-#endif //SERIAL_H
+#endif // SERIAL_H

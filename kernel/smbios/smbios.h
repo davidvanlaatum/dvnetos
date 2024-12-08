@@ -159,14 +159,7 @@ namespace smbios {
     const char *toString(char *buf, size_t size) const;
   } __attribute__((packed));
 
-  enum class ChassisState : uint8_t {
-    Other = 1,
-    Unknown = 2,
-    Safe = 3,
-    Warning = 4,
-    Critical = 5,
-    NonRecoverable = 6
-  };
+  enum class ChassisState : uint8_t { Other = 1, Unknown = 2, Safe = 3, Warning = 4, Critical = 5, NonRecoverable = 6 };
 
   enum class ChassisSecurityStatus : uint8_t {
     Other = 1,
@@ -323,7 +316,7 @@ namespace smbios {
     None = 3,
     Parity = 4,
     SingleBitECC = 5, // STR:"Single-bit error correction"
-    MultiBitECC = 6,  // STR:"Multi-bit error correction"
+    MultiBitECC = 6, // STR:"Multi-bit error correction"
     CRC = 7,
   };
 
@@ -398,6 +391,6 @@ namespace smbios {
   };
 
   extern SMBIOS defaultSMBIOS;
-}
+} // namespace smbios
 
-#endif //SMBIOS_H
+#endif // SMBIOS_H

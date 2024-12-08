@@ -8,19 +8,17 @@ struct limine_memmap_entry;
 namespace memory {
   class Paging {
   public:
-    void init(size_t count, limine_memmap_entry **mappings, uint64_t hhdmVirtualOffset,
-              uint64_t kernelVirtualOffset);
+    void init(size_t count, limine_memmap_entry **mappings, uint64_t hhdmVirtualOffset, uint64_t kernelVirtualOffset);
 
     // map a physical address to a virtual address that doesn't have to be page aligned
     void mapPartial(uint64_t physical_address, uint64_t virtual_address, size_t size, uint64_t flags);
 
-    void mapMemory(uint64_t physical_address, uint64_t virtual_address, size_t pageSize, size_t num_pages, uint64_t flags);
+    void mapMemory(uint64_t physical_address, uint64_t virtual_address, size_t pageSize, size_t num_pages,
+                   uint64_t flags);
 
     void unmapMemory(uint64_t virtual_address, size_t num_pages, size_t pageSize);
 
-    [[nodiscard]] static uint64_t makePageAligned(const uint64_t address) {
-      return address & ~0xFFFull;
-    }
+    [[nodiscard]] static uint64_t makePageAligned(const uint64_t address) { return address & ~0xFFFull; }
 
     static constexpr size_t PAGE_ENTRIES = PAGE_SIZE / sizeof(uint64_t);
     // Page table entry flags
@@ -58,7 +56,7 @@ namespace memory {
     using pageTableToRangesCallback = void (*)(PageTableRangeData *, T *);
 
     template<typename T>
-    using mapPhysicalToVirtual = void *(*)(uint64_t physical, T *data);
+    using mapPhysicalToVirtual = void *(*) (uint64_t physical, T *data);
 
     template<typename T>
     static void pageTableToRanges(const uint64_t *table, mapPhysicalToVirtual<T> mapFunc,
@@ -88,15 +86,12 @@ namespace memory {
 
     static char *tableFlagsToString(uint64_t flags);
 
-    [[nodiscard]] uint64_t adjustPageTablePhysicalToVirtual(const uint64_t in) const {
-      return in + pageTableOffset;
-    }
+    [[nodiscard]] uint64_t adjustPageTablePhysicalToVirtual(const uint64_t in) const { return in + pageTableOffset; }
 
-    [[nodiscard]] uint64_t adjustPageTableVirtualToPhysical(const uint64_t in) const {
-      return in - pageTableOffset;
-    }
+    [[nodiscard]] uint64_t adjustPageTableVirtualToPhysical(const uint64_t in) const { return in - pageTableOffset; }
 
-    static void setPageTableEntry(uint64_t *table, uint16_t index, uint64_t virtualAddress, uint64_t physicalAddress, uint64_t flags);
+    static void setPageTableEntry(uint64_t *table, uint16_t index, uint64_t virtualAddress, uint64_t physicalAddress,
+                                  uint64_t flags);
 
     static void clearPageTableEntry(uint64_t *table, uint16_t index);
   };
@@ -122,10 +117,8 @@ namespace memory {
               const uint64_t blockIdxL3[] = {i, j, k};
               if (l3Table[k] & PAGE_PRESENT) {
                 if (l3Table[k] & PAGE_SIZE_FLAG) {
-                  if (!leafCallback(pageIndexesToVirtual(blockIdxL3, 3),
-                                    l3Table[k] & PAGE_ADDR_MASK3,
-                                    l3Table[k] & PAGE_FLAGS_MASK & ~PAGE_SIZE_FLAG, PAGE_SIZE * PAGE_ENTRIES,
-                                    data)) {
+                  if (!leafCallback(pageIndexesToVirtual(blockIdxL3, 3), l3Table[k] & PAGE_ADDR_MASK3,
+                                    l3Table[k] & PAGE_FLAGS_MASK & ~PAGE_SIZE_FLAG, PAGE_SIZE * PAGE_ENTRIES, data)) {
                     done = true;
                   }
                 } else {
@@ -133,8 +126,7 @@ namespace memory {
                   for (uint64_t l = 0; l < PAGE_ENTRIES && !done; l++) {
                     const uint64_t blockIdxL4[] = {i, j, k, l};
                     if (l4Table[l] & PAGE_PRESENT) {
-                      if (!leafCallback(pageIndexesToVirtual(blockIdxL4, 4),
-                                        l4Table[l] & ~PAGE_FLAGS_MASK,
+                      if (!leafCallback(pageIndexesToVirtual(blockIdxL4, 4), l4Table[l] & ~PAGE_FLAGS_MASK,
                                         l4Table[l] & PAGE_FLAGS_MASK & ~PAGE_SIZE_FLAG, PAGE_SIZE, data)) {
                         done = true;
                       }
@@ -167,16 +159,17 @@ namespace memory {
       pageTableToRangesCallback<T> callback;
       mapPhysicalToVirtual<T> mapFunc;
     } lData = {
-          .data = data,
-          .callback = callback,
-          .mapFunc = mapFunc,
-        };
+        .data = data,
+        .callback = callback,
+        .mapFunc = mapFunc,
+    };
 
     walkPageTableLeafCallback<Data> leafCallback = [](uint64_t virtualAddress, uint64_t physicalAddress, uint64_t flags,
                                                       uint32_t pageSize, Data *d) -> bool {
       flags &= ~(PAGE_ACCESSED | PAGE_DIRTY);
       if (d->inBlock) {
-        if (d->currentBlock.physicalEnd + 1 == physicalAddress && d->currentBlock.flags == flags && d->currentBlock.pageSize == pageSize) {
+        if (d->currentBlock.physicalEnd + 1 == physicalAddress && d->currentBlock.flags == flags &&
+            d->currentBlock.pageSize == pageSize) {
           d->currentBlock.physicalEnd = physicalAddress + pageSize - 1;
           d->currentBlock.virtualEnd = virtualAddress + pageSize - 1;
           ++d->currentBlock.pageCount;
@@ -204,10 +197,10 @@ namespace memory {
       }
       return true;
     };
-    mapPhysicalToVirtual<Data> localMap = [](uint64_t physical, Data *d) -> void *{
+    mapPhysicalToVirtual<Data> localMap = [](uint64_t physical, Data *d) -> void * {
       return reinterpret_cast<void *>(d->mapFunc(physical, d->data));
     };
     walkPageTableLeaf(table, localMap, leafCallback, missingCallback, &lData);
   }
-}
-#endif //PAGING_H
+} // namespace memory
+#endif // PAGING_H
