@@ -40,15 +40,11 @@ namespace framebuffer {
 
     void Framebuffer::postInit() const {
         const limine_framebuffer *framebuffer = framebuffer_request.response->framebuffers[0];
-        char buf[256] = {};
-        ksnprintf(buf, sizeof(buf), "Framebuffer found at %p\n", framebuffer->address);
-        defaultVirtualConsole.appendText(buf);
-        ksnprintf(buf,sizeof(buf), "fb: %dx%d %d bpp, %d modes\n", width, height, framebuffer->bpp, framebuffer->mode_count);
-        defaultVirtualConsole.appendText(buf);
+        kprintf("Framebuffer found at %p\n", framebuffer->address);
+        kprintf("fb: %dx%d %d bpp, %lu modes\n", width, height, framebuffer->bpp, framebuffer->mode_count);
         for (int i = 0; i < framebuffer->mode_count; i++) {
             const auto mode = framebuffer->modes[i];
-            ksnprintf(buf, sizeof(buf), "fb mode %d: %dx%d %d bpp\n", i, mode->width, mode->height, mode->bpp);
-            defaultVirtualConsole.appendText(buf);
+            kprintf("fb mode %d: %lux%lu %d bpp\n", i, mode->width, mode->height, mode->bpp);
         }
     }
 

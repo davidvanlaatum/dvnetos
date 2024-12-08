@@ -5,6 +5,9 @@
 
 #include "Framebuffer.h"
 
+#define kprintf(msg,...) framebuffer::defaultVirtualConsole.appendFormattedText(msg, __VA_ARGS__)
+#define kprint(msg) framebuffer::defaultVirtualConsole.appendText(msg)
+
 namespace framebuffer {
     class VirtualConsole {
     public:
@@ -14,7 +17,7 @@ namespace framebuffer {
         void init(Framebuffer *framebuffer);
 
         void appendText(const char *text);
-        void appendFormattedText(const char *format, ...);
+        void appendFormattedText(const char *format, ...) __attribute__((format(printf, 2, 3)));
 
     protected:
         size_t cursorX = 0;

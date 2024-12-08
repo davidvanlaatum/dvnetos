@@ -26,7 +26,7 @@ class KernelBoots:
     # self.qmp.logger.setLevel(logging.DEBUG)
     self.qemu_cmd = qemu_cmd
     self.qemu_cmd.extend(
-      ['-vnc', ':1', '-no-reboot', '-qmp', 'unix:qmp-sock,server', '-S', '-serial', 'file:' + self.serial_log])
+      ['-display', 'none', '-no-reboot', '-qmp', 'unix:qmp-sock,server', '-S', '-serial', 'file:' + self.serial_log])
     self.timeout = timeout
     self.logger.info(f"QEMU command: {self.qemu_cmd} timeout: {self.timeout}")
 

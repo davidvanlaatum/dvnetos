@@ -16,6 +16,8 @@ namespace memory {
 
     void mapMemory(uint64_t physical_address, uint64_t virtual_address, size_t pageSize, size_t num_pages, uint64_t flags);
 
+    void unmapMemory(uint64_t virtual_address, size_t num_pages, size_t pageSize);
+
     [[nodiscard]] static uint64_t makePageAligned(const uint64_t address) {
       return address & ~0xFFFull;
     }
@@ -95,6 +97,8 @@ namespace memory {
     }
 
     static void setPageTableEntry(uint64_t *table, uint16_t index, uint64_t virtualAddress, uint64_t physicalAddress, uint64_t flags);
+
+    static void clearPageTableEntry(uint64_t *table, uint16_t index);
   };
 
   extern Paging paging;

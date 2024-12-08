@@ -17,7 +17,7 @@ void dumpStack(int drop) {
   while (frame_pointer) {
     auto frame = static_cast<void **>(frame_pointer);
     if (void *return_address = frame[1]; drop == 0 && return_address != nullptr) {
-      framebuffer::defaultVirtualConsole.appendFormattedText("%p\n", return_address);
+      kprintf("%p\n", return_address);
     } else {
       drop--;
     }
@@ -26,7 +26,7 @@ void dumpStack(int drop) {
 }
 
 void panic(const char *file, const uint32_t line, const char *msg) {
-  framebuffer::defaultVirtualConsole.appendFormattedText("%s:%d: %s\n", file, line, msg);
+  kprintf("%s:%d: %s\n", file, line, msg);
   dumpStack(1);
   halt();
 }
@@ -42,7 +42,7 @@ void panicf(const char *file, const uint32_t line, const char *fmt, ...) {
       i = size + 1;
       continue;
     }
-    framebuffer::defaultVirtualConsole.appendFormattedText("%s:%d: %s\n", file, line, buf);
+    kprintf("%s:%d: %s\n", file, line, buf);
     break;
   }
   dumpStack(1);

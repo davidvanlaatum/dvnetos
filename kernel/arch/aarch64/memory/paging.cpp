@@ -1,6 +1,7 @@
 #include <cstring>
 #include <cstdio>
 #include "limine.h"
+#include <memutil.h>
 #include "framebuffer/VirtualConsole.h"
 #include "utils/bytes.h"
 #include "utils/panic.h"
@@ -49,10 +50,17 @@ namespace memory {
     }
     uint64_t ttbr0, ttbr1;
     asm volatile ("mrs %0, ttbr0_el1; mrs %1, ttbr1_el1; mrs %2, tcr_el1" : "=r"(ttbr0), "=r"(ttbr1), "=r"(tcr_el1));
-    framebuffer::defaultVirtualConsole.appendFormattedText(
-      "current ttbr0: %p/%p ttbr1: %p/%p tcr_el1: %x initial pool %p, hhdmVirtualOffset %p, kernelOffset %p\n",
-      ttbr0, ttbr0 + hhdmVirtualOffset, ttbr1, ttbr1 + hhdmVirtualOffset, tcr_el1, initialPool, hhdmVirtualOffset,
-      kernelVirtualOffset);
+
+    Paging tmpPaging;
+    tmpPaging.pageTableOffset = hhdmVirtualOffset;
+    tmpPaging.tcr_el1 = tcr_el1;
+    tmpPaging.higherHalfOffset = hhdmVirtualOffset;
+    tmpPaging.root1 = reinterpret_cast<uint64_t *>(tmpPaging.adjustPageTablePhysicalToVirtual(ttbr0));
+    tmpPaging.root2 = reinterpret_cast<uint64_t *>(tmpPaging.adjustPageTablePhysicalToVirtual(ttbr1));
+
+    kprintf("current ttbr0: %p/%p ttbr1: %p/%p tcr_el1: %lx initial pool %p, hhdmVirtualOffset %p, kernelOffset %p\n",
+            toPtr(ttbr0), toPtr(tmpPaging.root1), toPtr(ttbr1), toPtr(tmpPaging.root2), tcr_el1, toPtr(initialPool),
+            toPtr(hhdmVirtualOffset), toPtr(kernelVirtualOffset));
 
     root1 = static_cast<uint64_t *>(GetPagePtr(1));
     root2 = static_cast<uint64_t *>(GetPagePtr(1));
@@ -67,13 +75,6 @@ namespace memory {
     //     break;
     //   }
     // }
-
-    Paging tmpPaging;
-    tmpPaging.pageTableOffset = hhdmVirtualOffset;
-    tmpPaging.tcr_el1 = tcr_el1;
-    tmpPaging.higherHalfOffset = hhdmVirtualOffset;
-    tmpPaging.root1 = reinterpret_cast<uint64_t *>(tmpPaging.adjustPageTablePhysicalToVirtual(ttbr0));
-    tmpPaging.root2 = reinterpret_cast<uint64_t *>(tmpPaging.adjustPageTablePhysicalToVirtual(ttbr1));
 
     struct callbackData {
       size_t mapCount;
@@ -102,10 +103,10 @@ namespace memory {
         if (rangesOverlap(page_table_range_data, data->mappings[i])) {
           if (isTypeToMap(data->mappings[i]->type)) {
             char buff[32];
-            framebuffer::defaultVirtualConsole.appendFormattedText(
-              "block %p-%p/%p-%p %d(%s) %s %d\n", page_table_range_data->virtualStart,
-              page_table_range_data->virtualEnd, page_table_range_data->physicalStart,
-              page_table_range_data->physicalEnd, page_table_range_data->pageCount,
+            kprintf(
+              "block %p-%p/%p-%p %lu(%s) %s %lu\n", toPtr(page_table_range_data->virtualStart),
+              toPtr(page_table_range_data->virtualEnd), toPtr(page_table_range_data->physicalStart),
+              toPtr(page_table_range_data->physicalEnd), page_table_range_data->pageCount,
               bytesToHumanReadable(buff, sizeof(buff), page_table_range_data->pageCount * PAGE_SIZE),
               tableFlagsToString(page_table_range_data->flags),
               data->mappings[i]->type);
@@ -121,10 +122,10 @@ namespace memory {
       }
       if (!mapped && page_table_range_data->pageCount > 2) {
         char buff[32];
-        framebuffer::defaultVirtualConsole.appendFormattedText(
-          "not mapping %p-%p/%p-%p %d(%s) %s\n", page_table_range_data->virtualStart,
-          page_table_range_data->virtualEnd, page_table_range_data->physicalStart,
-          page_table_range_data->physicalEnd, page_table_range_data->pageCount,
+        kprintf(
+          "not mapping %p-%p/%p-%p %lu(%s) %s\n", toPtr(page_table_range_data->virtualStart),
+          toPtr(page_table_range_data->virtualEnd), toPtr(page_table_range_data->physicalStart),
+          toPtr(page_table_range_data->physicalEnd), page_table_range_data->pageCount,
           bytesToHumanReadable(buff, sizeof(buff), page_table_range_data->pageCount * PAGE_SIZE),
           tableFlagsToString(page_table_range_data->flags));
       }
@@ -133,8 +134,8 @@ namespace memory {
       return reinterpret_cast<void *>(v + d->hhdmVirtualOffset);
     };
     tmpPaging.pageTableToRanges(mapper, callback, &data);
-    framebuffer::defaultVirtualConsole.appendFormattedText(
-      "new paging table created at %p/%p using %d temporary tables\n", root1, root2, initialPoolUsedCount);
+    kprintf("new paging table created at %p/%p using %d temporary tables\n", toPtr(root1), toPtr(root2),
+            initialPoolUsedCount);
     asm volatile(
       "msr ttbr0_el1, %0\n"
       "msr ttbr1_el1, %1\n"
@@ -144,7 +145,7 @@ namespace memory {
       : "memory"
     );
     invalidateCache();
-    framebuffer::defaultVirtualConsole.appendText("paging enabled\n");
+    kprint("paging enabled\n");
   }
 
   void Paging::invalidateCache() {
@@ -170,16 +171,15 @@ namespace memory {
 
   void Paging::mapMemory(uint64_t physical_address, uint64_t virtual_address, const size_t pageSize,
                          const size_t num_pages, uint64_t flags) {
-    framebuffer::defaultVirtualConsole.appendFormattedText(
-      "mapping %p-%p to %p-%p (%d) %s", virtual_address, virtual_address + (num_pages * PAGE_SIZE) - 1,
-      physical_address, physical_address + (num_pages * PAGE_SIZE) - 1, num_pages, tableFlagsToString(flags));
-    if (physical_address % PAGE_SIZE != 0) {
+    kprintf(
+      "mapping %p-%p to %p-%p (%lu) %s", toPtr(virtual_address), toPtr(virtual_address + (num_pages * pageSize) - 1),
+      toPtr(physical_address), toPtr(physical_address + (num_pages * pageSize) - 1), num_pages,
+      tableFlagsToString(flags));
+    if (physical_address % pageSize != 0) {
       kpanic("physical address must be page aligned");
     }
-    if (virtual_address % PAGE_SIZE != 0) {
-      framebuffer::defaultVirtualConsole.appendFormattedText("\nvirtual address %p is not page aligned %d\n",
-                                                             virtual_address, virtual_address % PAGE_SIZE);
-      kpanic("virtual address must be page aligned");
+    if (virtual_address % pageSize != 0) {
+      kpanicf("virtual address(%p) must be page aligned", toPtr(virtual_address));
     }
 
     for (size_t i = 0; i < num_pages; ++i) {
@@ -201,12 +201,12 @@ namespace memory {
       const auto pd = reinterpret_cast<uint64_t *>(adjustPageTablePhysicalToVirtual(pdpt[idx.l2] & ~PAGE_FLAGS_MASK));
       if (pageSize == PAGE_SIZE * PAGE_ENTRIES) {
         kassertf(virtual_address % (PAGE_SIZE * PAGE_ENTRIES) == 0, "huge page must be page aligned: %p 0x%x",
-                 virtual_address, virtual_address % (PAGE_SIZE * PAGE_ENTRIES));
+                 toPtr(virtual_address), static_cast<unsigned>(virtual_address % pageSize));
         kassertf(physical_address % (PAGE_SIZE * PAGE_ENTRIES) == 0, "huge page must be page aligned: %p 0x%x",
-                 physical_address, physical_address % (PAGE_SIZE * PAGE_ENTRIES));
+                 toPtr(physical_address), static_cast<unsigned>(physical_address % pageSize));
         setPageTableEntry(pd, idx.l3, 3, virtual_address, physical_address, flags);
-        virtual_address += PAGE_SIZE * PAGE_ENTRIES;
-        physical_address += PAGE_SIZE * PAGE_ENTRIES;
+        virtual_address += pageSize;
+        physical_address += pageSize;
         continue;
       }
       if (!(pd[idx.l3] & PAGE_VALID)) {
@@ -214,15 +214,60 @@ namespace memory {
         memset(new_pt, 0, PAGE_SIZE);
         pd[idx.l3] = adjustPageTableVirtualToPhysical(reinterpret_cast<uint64_t>(new_pt)) | PAGE_VALID | PAGE_TABLE;
       } else if ((pd[idx.l3] & PAGE_TABLE) == 0) {
-        continue;
+        kpanicf("huge page already mapped at %p", toPtr(virtual_address));
       }
       const auto pt = reinterpret_cast<uint64_t *>(adjustPageTablePhysicalToVirtual(pd[idx.l3] & ~PAGE_FLAGS_MASK));
       setPageTableEntry(pt, idx.l4, 4, virtual_address, physical_address, flags);
-      physical_address += PAGE_SIZE;
-      virtual_address += PAGE_SIZE;
+      physical_address += pageSize;
+      virtual_address += pageSize;
     }
     invalidateCache();
-    framebuffer::defaultVirtualConsole.appendText(" done\n");
+    kprint(" done\n");
+  }
+
+  void Paging::unmapMemory(uint64_t virtual_address, size_t num_pages, size_t pageSize) {
+    kprintf("unmapping %p-%p", toPtr(virtual_address), toPtr(virtual_address + (num_pages * pageSize) - 1));
+    if (virtual_address % PAGE_SIZE != 0) {
+      kprintf("\nvirtual address %p is not page aligned %lu\n", toPtr(virtual_address), virtual_address % PAGE_SIZE);
+      kpanic("virtual address must be page aligned");
+    }
+    for (size_t i = 0; i < num_pages; ++i) {
+      const auto idx = virtualToPageIndexes(virtual_address);
+      const auto root = idx.higherHalf ? root2 : root1;
+
+      if (!(root[idx.l1] & PAGE_VALID)) {
+        virtual_address += pageSize;
+        continue;
+      }
+      const auto pdpt = reinterpret_cast<uint64_t *>(adjustPageTablePhysicalToVirtual(root[idx.l1] & ~PAGE_FLAGS_MASK));
+
+      if (!(pdpt[idx.l2] & PAGE_VALID)) {
+        virtual_address += pageSize;
+        continue;
+      }
+      const auto pd = reinterpret_cast<uint64_t *>(adjustPageTablePhysicalToVirtual(pdpt[idx.l2] & ~PAGE_FLAGS_MASK));
+      if (pageSize == PAGE_SIZE * PAGE_ENTRIES) {
+        kassertf(virtual_address % pageSize == 0, "huge page must be page aligned: %p 0x%x",
+                 toPtr(virtual_address), static_cast<unsigned>(virtual_address % pageSize));
+        kassertf((pd[idx.l3] & PAGE_TABLE) == 0, "huge page must not have a page table: %p",
+                 toPtr(virtual_address));
+        clearPageTableEntry(pd, idx.l3);
+        virtual_address += pageSize;
+        continue;
+      }
+      if (!(pd[idx.l3] & PAGE_VALID)) {
+        virtual_address += pageSize;
+        continue;
+      } else if ((pd[idx.l3] & PAGE_TABLE) == 0) {
+        virtual_address += pageSize;
+        continue;
+      }
+      const auto pt = reinterpret_cast<uint64_t *>(adjustPageTablePhysicalToVirtual(pd[idx.l3] & ~PAGE_FLAGS_MASK));
+      clearPageTableEntry(pt, idx.l4);
+      virtual_address += pageSize;
+    }
+    invalidateCache();
+    kprint(" done\n");
   }
 
   uint64_t Paging::pageIndexesToVirtual(const uint64_t l[], const size_t count, const bool higherHalf) const {
@@ -265,7 +310,7 @@ namespace memory {
       buf[n++] = 'T';
     }
     if (flags & ~(PAGE_VALID | PAGE_TABLE)) {
-      n += ksnprintf(buf + n, sizeof(buf) - n, "%x", flags & ~(PAGE_VALID | PAGE_TABLE));
+      n += ksnprintf(buf + n, sizeof(buf) - n, "%lx", flags & ~(PAGE_VALID | PAGE_TABLE));
     }
     buf[n] = 0;
     return buf;
@@ -275,21 +320,23 @@ namespace memory {
                                  const uint64_t virtualAddress, const uint64_t physicalAddress, const uint64_t flags) {
     const uint64_t newValue = (physicalAddress & PAGE_ADDR_MASK) | PAGE_VALID | flags | (level == 4 ? PAGE_TABLE : 0);
     if (table[index] != 0 && table[index] != newValue) {
-      framebuffer::defaultVirtualConsole.appendFormattedText(
-        "attempted to overwrite page table entry for %p from %p to %p",
-        virtualAddress, table[index] & ~PAGE_FLAGS_MASK,
-        newValue & ~PAGE_FLAGS_MASK);
+      kprintf("attempted to overwrite page table entry for %p from %p to %p", toPtr(virtualAddress),
+              toPtr(table[index] & ~PAGE_FLAGS_MASK), toPtr(newValue & ~PAGE_FLAGS_MASK));
       const auto oldFlags = table[index] & PAGE_FLAGS_MASK & ~(PAGE_ACCESSED | PAGE_DIRTY);
       const auto newFlags = newValue & PAGE_FLAGS_MASK & ~(PAGE_ACCESSED | PAGE_DIRTY);
       if (oldFlags != newFlags) {
-        framebuffer::defaultVirtualConsole.appendFormattedText(" old flags %s", tableFlagsToString(
-                                                                 oldFlags & PAGE_FLAGS_MASK));
-        framebuffer::defaultVirtualConsole.appendFormattedText(" new flags %s", tableFlagsToString(
-                                                                 newFlags & PAGE_FLAGS_MASK));
+        kprintf(" old flags %s", tableFlagsToString(
+                  oldFlags & PAGE_FLAGS_MASK));
+        kprintf(" new flags %s", tableFlagsToString(
+                  newFlags & PAGE_FLAGS_MASK));
       }
-      framebuffer::defaultVirtualConsole.appendText("\n");
+      kprint("\n");
       kpanic("page table entry already exists");
     }
     table[index] = newValue;
+  }
+
+  void Paging::clearPageTableEntry(uint64_t *table, const uint16_t index) {
+    table[index] = 0;
   }
 }

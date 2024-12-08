@@ -11,7 +11,7 @@ namespace serial {
         bufferSize(size) {
       }
 
-      void init(uint64_t hhdnOffset);
+      void init(uint64_t hhdmOffset);
 
       void write(const char *text, size_t length);
 

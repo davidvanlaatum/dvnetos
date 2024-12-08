@@ -3,6 +3,9 @@
 #include "cstring"
 #include "memory/paging.h"
 #include "utils/panic.h"
+#include <memutil.h>
+
+using memory::addToPointer;
 
 namespace serial {
   char serialBuffer[0x10000];
@@ -14,30 +17,26 @@ namespace serial {
   constexpr auto CR = 0x30;
 
   namespace aarch64 {
-    template<typename T>
-    T *adjustPointer(T *ptr, const uint64_t offset) {
-      return reinterpret_cast<T *>(reinterpret_cast<uint64_t>(ptr) + offset);
-    }
-
     void Serial::init(const uint64_t hhdmOffset) {
       memory::paging.mapMemory(getBaseAddr(), getBaseAddr() + hhdmOffset, PAGE_SIZE, 1, 0x700);
-      base = adjustPointer(base, hhdmOffset);
-      if (const auto fr = *adjustPointer(base, FR); fr != 0xFFFFFFFF && fr != 0x00000000) {
-        framebuffer::defaultVirtualConsole.appendFormattedText("FR: %x\n", fr);
+      base = addToPointer(base, hhdmOffset);
+      if (const auto fr = *addToPointer(base, FR); fr != 0xFFFFFFFF && fr != 0x00000000) {
+        kprint("Serial Port Found\n");
 
-        *adjustPointer(base, CR) = 0x0;
+        *addToPointer(base, CR) = 0x0;
 
-        *adjustPointer(base, IBRD) = static_cast<uint32_t>(26);
-        *adjustPointer(base, FBRD) = static_cast<uint32_t>(3);
-        *adjustPointer(base, LCRH) = (1 << 4) | (3 << 5);
+        *addToPointer(base, IBRD) = static_cast<uint32_t>(26);
+        *addToPointer(base, FBRD) = static_cast<uint32_t>(3);
+        *addToPointer(base, LCRH) = (1 << 4) | (3 << 5);
 
-        *adjustPointer(base, CR) = (1 << 0) | (1 << 8) | (1 << 9);
+        *addToPointer(base, CR) = (1 << 0) | (1 << 8) | (1 << 9);
 
         enabled = true;
         write(buffer, bufferUsed);
         bufferUsed = 0;
       } else {
-        framebuffer::defaultVirtualConsole.appendText("Serial not found\n");
+        memory::paging.unmapMemory(getBaseAddr(), 1, PAGE_SIZE);
+        kprint("Serial not found\n");
       }
     }
 
@@ -45,7 +44,7 @@ namespace serial {
       if (enabled) {
         for (size_t i = 0; i < length; i++) {
           // Wait for UART to be ready to transmit
-          while ((*adjustPointer(base, FR) & 0x20) != 0) {
+          while ((*addToPointer(base, FR) & 0x20) != 0) {
           }
           *base = text[i];
         }

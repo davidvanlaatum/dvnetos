@@ -132,24 +132,24 @@ extern "C" void kmain() {
     serial::defaultSerial.init(memory::hhdm_request.response->offset);
 
     if (dtb.response != nullptr) {
-        framebuffer::defaultVirtualConsole.appendFormattedText("DTB at %p\n", dtb.response->dtb_ptr);
+        kprintf("DTB at %p\n", dtb.response->dtb_ptr);
     } else {
-        framebuffer::defaultVirtualConsole.appendText("No DTB\n");
+        kprint("No DTB\n");
     }
 
     if (efi_system_table.response != nullptr) {
-        framebuffer::defaultVirtualConsole.appendFormattedText("EFI system table at %p\n", efi_system_table.response->address);
+        kprintf("EFI system table at %p\n", efi_system_table.response->address);
     } else {
-        framebuffer::defaultVirtualConsole.appendText("No EFI system table\n");
+        kprint("No EFI system table\n");
     }
 
     if (rsdp.response != nullptr) {
-        framebuffer::defaultVirtualConsole.appendFormattedText("RSDP at %p\n", rsdp.response->address);
+        kprintf("RSDP at %p\n", rsdp.response->address);
     } else {
-        framebuffer::defaultVirtualConsole.appendText("No RSDP\n");
+        kprint("No RSDP\n");
     }
 
     smbios::defaultSMBIOS.init(memory::hhdm_request.response->offset);
-    framebuffer::defaultVirtualConsole.appendText("start complete\n");
+    kprint("start complete\n");
     halt();
 }

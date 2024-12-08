@@ -4,6 +4,7 @@
 #include "smbios.h"
 
 #include "cstring"
+#include "memutil.h"
 #include "memory/paging.h"
 #include "utils/bytes.h"
 #include "utils/panic.h"
@@ -18,6 +19,8 @@ namespace {
   };
 }
 
+using memory::toPtr;
+
 namespace smbios {
   SMBIOS defaultSMBIOS;
 
@@ -25,7 +28,8 @@ namespace smbios {
     size_t i;
     const char *strtab = reinterpret_cast<const char *>(hd) + hd->length;
     // Scan until we find a double zero byte
-    for (i = 1; strtab[i - 1] != '\0' || strtab[i] != '\0'; i++) {}
+    for (i = 1; strtab[i - 1] != '\0' || strtab[i] != '\0'; i++) {
+    }
     return hd->length + i + 1;
   }
 
@@ -36,10 +40,8 @@ namespace smbios {
           reinterpret_cast<uint64_t>(smbios_request.response->entry_64) + hhdmOffset);
         memory::paging.mapPartial(reinterpret_cast<uint64_t>(smbios_request.response->entry_64),
                                   reinterpret_cast<uint64_t>(entry), sizeof(Entry64), 0x700);
-        framebuffer::defaultVirtualConsole.appendFormattedText("SMBIOS 64-bit entry: %d.%d table at %p length %d\n",
-                                                               static_cast<int>(entry->major_version),
-                                                               static_cast<int>(entry->minor_version),
-                                                               entry->table_address, entry->table_length);
+        kprintf("SMBIOS 64-bit entry: %d.%d table at %p length %d\n", static_cast<int>(entry->major_version),
+                static_cast<int>(entry->minor_version), toPtr(entry->table_address), entry->table_length);
         const auto *table = reinterpret_cast<TableHeader *>(
           static_cast<uint64_t>(entry->table_address) + hhdmOffset);
         memory::paging.mapPartial(entry->table_address, reinterpret_cast<uint64_t>(table), entry->table_length, 0x700);
@@ -49,21 +51,19 @@ namespace smbios {
           reinterpret_cast<uint64_t>(smbios_request.response->entry_32) + hhdmOffset);
         memory::paging.mapPartial(reinterpret_cast<uint64_t>(smbios_request.response->entry_32),
                                   reinterpret_cast<uint64_t>(entry), sizeof(Entry32), 0);
-        framebuffer::defaultVirtualConsole.appendFormattedText("SMBIOS 32-bit entry: %d.%d table at %p length %d\n",
-                                                               static_cast<int>(entry->major_version),
-                                                               static_cast<int>(entry->minor_version),
-                                                               entry->table_address, entry->table_length);
+        kprintf("SMBIOS 32-bit entry: %d.%d table at %p length %d\n", static_cast<int>(entry->major_version),
+                static_cast<int>(entry->minor_version), toPtr(entry->table_address), entry->table_length);
         const auto *table = reinterpret_cast<TableHeader *>(
           static_cast<uint64_t>(entry->table_address) + hhdmOffset);
         memory::paging.mapPartial(entry->table_address, reinterpret_cast<uint64_t>(table), entry->table_length, 0);
         dumpTable(table, entry->table_length);
       } else {
-        framebuffer::defaultVirtualConsole.appendText("No SMBIOS address\n");
+        kprint("No SMBIOS address\n");
       }
     } else {
-      framebuffer::defaultVirtualConsole.appendText("No SMBIOS\n");
+      kprint("No SMBIOS\n");
     }
-    framebuffer::defaultVirtualConsole.appendText("SMBIOS end\n");
+    kprint("SMBIOS end\n");
   }
 
 
@@ -74,35 +74,29 @@ namespace smbios {
       char buf[512];
       switch (ptr->type)
         case TableType::FirmwareInfo: {
-          framebuffer::defaultVirtualConsole.appendFormattedText(
-            "%s\n", reinterpret_cast<const FirmwareInfo *>(ptr)->toString(buf, sizeof(buf)));
+          kprintf("%s\n", reinterpret_cast<const FirmwareInfo *>(ptr)->toString(buf, sizeof(buf)));
           break;
         case TableType::SystemInfo:
-          framebuffer::defaultVirtualConsole.appendFormattedText(
-            "%s\n", reinterpret_cast<const SystemInfo *>(ptr)->toString(buf, sizeof(buf)));
+          kprintf("%s\n", reinterpret_cast<const SystemInfo *>(ptr)->toString(buf, sizeof(buf)));
           break;
         case TableType::ChassisInfo:
-          framebuffer::defaultVirtualConsole.appendFormattedText(
-            "%s\n", reinterpret_cast<const ChassisInfo *>(ptr)->toString(buf, sizeof(buf)));
+          kprintf("%s\n", reinterpret_cast<const ChassisInfo *>(ptr)->toString(buf, sizeof(buf)));
           break;
         case TableType::ProcessorInfo:
-          framebuffer::defaultVirtualConsole.appendFormattedText(
-            "%s\n", reinterpret_cast<const ProcessorInfo *>(ptr)->toString(buf, sizeof(buf)));
+          kprintf("%s\n", reinterpret_cast<const ProcessorInfo *>(ptr)->toString(buf, sizeof(buf)));
           break;
         case TableType::PhysicalMemoryArray:
-          framebuffer::defaultVirtualConsole.appendFormattedText(
-            "%s\n", reinterpret_cast<const PhysicalMemoryArray *>(ptr)->toString(buf, sizeof(buf)));
+          kprintf("%s\n", reinterpret_cast<const PhysicalMemoryArray *>(ptr)->toString(buf, sizeof(buf)));
           break;
         case TableType::MemoryDevice:
-          framebuffer::defaultVirtualConsole.appendFormattedText(
-            "%s\n", reinterpret_cast<const MemoryDevice *>(ptr)->toString(buf, sizeof(buf)));
+          kprintf("%s\n", reinterpret_cast<const MemoryDevice *>(ptr)->toString(buf, sizeof(buf)));
           break;
         case TableType::EndOfTable:
-          framebuffer::defaultVirtualConsole.appendText("End of table\n");
+          kprint("End of table\n");
           return;
         default:
-          framebuffer::defaultVirtualConsole.appendFormattedText("Unhandled type %s length %d\n", toString(ptr->type),
-                                                                 ptr->length);
+          kprintf("Unhandled type %s length %d\n", toString(ptr->type),
+                  ptr->length);
         }
     }
   }
@@ -219,7 +213,7 @@ namespace smbios {
     if (const auto manufacturer = this->getManufacturer()) {
       n += ksnprintf(buf + n, size - n, " manufacturer: %s", manufacturer);
     }
-    n += ksnprintf(buf + n, size - n, " id: %d", this->getId());
+    n += ksnprintf(buf + n, size - n, " id: %lu", this->getId());
     if (const auto version = this->getVersion()) {
       n += ksnprintf(buf + n, size - n, " version: %s", version);
     }

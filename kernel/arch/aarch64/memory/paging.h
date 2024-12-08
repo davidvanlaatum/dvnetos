@@ -18,6 +18,8 @@ namespace memory {
     void mapMemory(uint64_t physical_address, uint64_t virtual_address, size_t pageSize, size_t num_pages,
                    uint64_t flags);
 
+    void unmapMemory(uint64_t virtual_address, size_t num_pages, size_t pageSize);
+
     [[nodiscard]] static uint64_t makePageAligned(const uint64_t address) {
       return address & ~0xFFFull;
     }
@@ -97,6 +99,8 @@ namespace memory {
     static void setPageTableEntry(uint64_t *table, uint16_t index, uint8_t level, uint64_t virtualAddress,
                                   uint64_t physicalAddress, uint64_t flags);
 
+    static void clearPageTableEntry(uint64_t *table, uint16_t index);
+
     static void invalidateCache();
   };
 
@@ -150,7 +154,8 @@ namespace memory {
                     const uint64_t blockIdxL4[] = {i, j, k, l};
                     const auto l4Virtual = pageIndexesToVirtual(blockIdxL4, 4, higherHalf);
                     if (l4Table[l] & PAGE_VALID) {
-                      if (!leafCallback(l4Virtual, l4Table[l] & PAGE_ADDR_MASK, l4Table[l] & PAGE_FLAGS_MASK & ~PAGE_VALID & ~PAGE_TABLE,
+                      if (!leafCallback(l4Virtual, l4Table[l] & PAGE_ADDR_MASK,
+                                        l4Table[l] & PAGE_FLAGS_MASK & ~PAGE_VALID & ~PAGE_TABLE,
                                         PAGE_SIZE, data)) {
                         return true;
                       }
