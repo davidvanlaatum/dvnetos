@@ -1,3 +1,1 @@
-if (TARGET kernel AND ARCH STREQUAL "aarch64")
-  target_sources(kernel PRIVATE Serial.cpp Serial.h)
-endif ()
+arch_target_sources(aarch64 kernel Serial.cpp Serial.h)

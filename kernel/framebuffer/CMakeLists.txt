@@ -7,13 +7,7 @@ bin2h(
 
 if (TEST_MODE)
   include(configure-test)
-  add_executable(framebuffer_test
-      framebuffer_test.cpp
-      Framebuffer.h
-      Framebuffer.cpp
-      VirtualConsole.cpp
-      VirtualConsole.h
-  )
+  add_executable(framebuffer_test)
   target_include_directories(
       framebuffer_test
       PRIVATE
@@ -34,11 +28,19 @@ if (TEST_MODE)
   )
   configure_test(framebuffer_test)
 else ()
-  target_sources(kernel PRIVATE
-      Framebuffer.h
-      Framebuffer.cpp
-      VirtualConsole.cpp
-      VirtualConsole.h
-  )
   target_include_directories(kernel PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 endif ()
+cus_target_sources(kernel
+    Framebuffer.h
+    Framebuffer.cpp
+    VirtualConsole.cpp
+    VirtualConsole.h
+    font.h
+)
+cus_target_sources(framebuffer_test
+    framebuffer_test.cpp
+    Framebuffer.h
+    Framebuffer.cpp
+    VirtualConsole.cpp
+    VirtualConsole.h
+)

@@ -1,8 +1,6 @@
 if (NOT TEST_MODE)
     set(LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/arch/${ARCH}/linker.ld")
-    add_executable(kernel
-            main.cpp
-    )
+    add_executable(kernel)
     set_target_properties(kernel PROPERTIES LINK_DEPENDS ${LINKER_SCRIPT})
     target_compile_options(kernel PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${KERNEL_CXX_FLAGS}>)
     target_link_options(kernel PRIVATE "-T" "${LINKER_SCRIPT}" -static)
@@ -10,6 +8,7 @@ if (NOT TEST_MODE)
     target_include_directories(kernel PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR})
     target_compile_definitions(kernel PRIVATE -D__KERNEL__)
 endif ()
+cus_target_sources(kernel main.cpp)
 add_subdirectory(include)
 add_subdirectory(memory)
 add_subdirectory(framebuffer)

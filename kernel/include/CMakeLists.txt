@@ -1,19 +1,17 @@
-if (TARGET kernel)
-  target_sources(kernel PRIVATE
-      alloca.h
-      cstdarg
-      cstddef
-      cstdint
-      cstdio
-      cstring
-      limine.h
-      stdarg.h
-      stddef.h
-      stdint.h
-      stdio.h
-      string.h
-      memutil.h
-      type_traits
-  )
-endif ()
+cus_target_sources(kernel
+    alloca.h
+    cstdarg
+    cstddef
+    cstdint
+    cstdio
+    cstring
+    limine.h
+    stdarg.h
+    stddef.h
+    stdint.h
+    stdio.h
+    string.h
+    memutil.h
+    type_traits
+)
 add_subdirectory(__type_traits)
