@@ -2,6 +2,12 @@
 
 set -e
 
+cleanup() {
+  rm .ninja_log
+}
+
+trap cleanup EXIT
+
 DIRS=$(find . -maxdepth 1 -type d -exec test -f {}/CMakeCache.txt \; -exec basename {} \;)
 DIRCOUNT=$(echo $DIRS | wc -w)
 
