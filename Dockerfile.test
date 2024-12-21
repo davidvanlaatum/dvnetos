@@ -15,7 +15,7 @@ Signed-By: /usr/share/keyrings/kitware-archive-keyring.gpg" > /etc/apt/sources.l
 #Components: main\n\
 #Trusted: yes\n\
 #Options: trusted=yes" > /etc/apt/sources.list.d/llvm.sources && cat /etc/apt/sources.list.d/llvm.sources
-RUN apt update && apt install -y cmake clang-18 lld-18 clang-tools-18 libclang-18-dev libc++-dev gdisk mtools git python3-venv valgrind qemu-system && ln -sv /usr/lib/llvm-18/bin/ld.lld /usr/bin/ld.lld
+RUN apt update && apt install -y cmake clang-18 lld-18 clang-tools-18 libclang-18-dev libc++-dev gdisk mtools git python3-venv valgrind qemu-system g++ && ln -sv /usr/lib/llvm-18/bin/ld.lld /usr/bin/ld.lld
 COPY . /app
 ENV CTEST_OUTPUT_ON_FAILURE=1 CMAKE_COLOR_DIAGNOSTICS=ON
 

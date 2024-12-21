@@ -38,6 +38,7 @@ function(getAllSubdirs dir dirs)
 endfunction()
 
 function(getAllTargets var)
+  set(${var} "")
   set(DIRS ${CMAKE_SOURCE_DIR})
   getAllSubDirs(. DIRS)
   foreach (dir ${DIRS})

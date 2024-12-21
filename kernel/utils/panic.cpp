@@ -2,7 +2,7 @@
 #include "alloca.h"
 #include "cstdarg"
 #include "framebuffer/VirtualConsole.h"
-#include "stdio.h"
+#include <cstdio>
 
 void dumpStack(int drop) {
   void *frame_pointer;
