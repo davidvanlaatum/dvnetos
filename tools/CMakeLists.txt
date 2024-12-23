@@ -42,13 +42,11 @@ ExternalProject_Add(
 ExternalProject_Get_Property(venv BINARY_DIR)
 set(VENV_PATH ${BINARY_DIR})
 
-if(USE_CLANG)
-  get_filename_component(CLANG_DIR ${CLANG} DIRECTORY)
-  get_filename_component(CLANG_DIR ${CLANG_DIR} DIRECTORY)
-  set(CLANG_DIR ${CLANG_DIR}/lib/)
+get_filename_component(CLANG_DIR ${CLANG} DIRECTORY)
+get_filename_component(CLANG_DIR ${CLANG_DIR} DIRECTORY)
+set(CLANG_DIR ${CLANG_DIR}/lib/)
 #  set(CMAKE_FIND_DEBUG_MODE TRUE)
-  find_library(LIBCLANG_PATH NAMES clang PATHS ${CLANG_DIR} REQUIRED NO_CACHE)
-endif ()
+find_library(LIBCLANG_PATH NAMES clang PATHS ${CLANG_DIR} REQUIRED NO_CACHE)
 
 set(PYTHON_VENV ${CMAKE_COMMAND} -E env "LIBCLANG_PATH=${LIBCLANG_PATH}" -- ${VENV_PATH}/bin/python)
 set(PYTHON_VENV ${PYTHON_VENV} PARENT_SCOPE)

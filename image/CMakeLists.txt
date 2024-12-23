@@ -12,7 +12,6 @@ if (NOT TEST_MODE)
   find_program(QEMU_SYSTEM_PATH qemu-system-${ARCH})
   find_program(QEMU_IMG_PATH qemu-img)
 
-
   if (ARCH STREQUAL "aarch64")
     set(RPI_VERSION 4 CACHE STRING "Raspberry Pi version")
     if (RPI_VERSION STREQUAL "4")
