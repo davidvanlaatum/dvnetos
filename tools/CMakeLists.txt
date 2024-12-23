@@ -1,17 +1,3 @@
-unset(CMAKE_C_COMPILER_TARGET)
-unset(CMAKE_CXX_COMPILER_TARGET)
-unset(CMAKE_ASM_COMPILER_TARGET)
-unset(CMAKE_SYSTEM)
-set(CMAKE_SYSTEM_NAME ${CMAKE_HOST_SYSTEM_NAME})
-set(CMAKE_SYSTEM_PROCESSOR ${CMAKE_HOST_SYSTEM_PROCESSOR})
-unset(CMAKE_SHARED_LIBRARY_SUFFIX)
-unset(CMAKE_SHARED_LIBRARY_SUFFIX_CXX)
-unset(CMAKE_SHARED_LIBRARY_PREFIX)
-unset(CMAKE_SHARED_LIBRARY_PREFIX_CXX)
-unset(CMAKE_ASM_OUTPUT_EXTENSION)
-unset(CMAKE_CXX_COMPILER_ARCHITECTURE_ID)
-unset(CMAKE_CXX_COMPILER_ID_PLATFORM_CONTENT)
-
 get_cmake_property(all_vars VARIABLES)
 foreach (var ${all_vars})
   if (var MATCHES "CMAKE_CXX.*")
@@ -19,6 +5,7 @@ foreach (var ${all_vars})
   endif ()
 endforeach ()
 
+unset(CMAKE_TOOLCHAIN_FILE)
 project(dvnetos-tools LANGUAGES CXX)
 
 #get_cmake_property(all_vars VARIABLES)
@@ -45,8 +32,24 @@ set(VENV_PATH ${BINARY_DIR})
 get_filename_component(CLANG_DIR ${CLANG} DIRECTORY)
 get_filename_component(CLANG_DIR ${CLANG_DIR} DIRECTORY)
 set(CLANG_DIR ${CLANG_DIR}/lib/)
-#  set(CMAKE_FIND_DEBUG_MODE TRUE)
-find_library(LIBCLANG_PATH NAMES clang PATHS ${CLANG_DIR} REQUIRED NO_CACHE)
+
+if (NOT LIBCLANG_PATH OR NOT EXISTS ${LIBCLANG_PATH})
+  configure_file(${CMAKE_SOURCE_DIR}/CMake/find-libclang.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/libclang-find/CMakeLists.txt @ONLY)
+  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/libclang-find-build)
+  execute_process(
+      COMMAND ${CMAKE_COMMAND} -G ${CMAKE_GENERATOR} ${CMAKE_CURRENT_BINARY_DIR}/libclang-find/
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/libclang-find-build
+      OUTPUT_VARIABLE OUTPUT
+      RESULT_VARIABLE RESULT
+  )
+  if (NOT RESULT EQUAL 0)
+    message(FATAL_ERROR "Failed to find libclang:\n${OUTPUT}")
+  endif ()
+  file(READ ${CMAKE_CURRENT_BINARY_DIR}/libclang-find-build/libclang.path PATH)
+  set(LIBCLANG_PATH ${PATH} CACHE FILEPATH "Path to libclang" FORCE)
+endif ()
+file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/libclang-find)
+file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/libclang-find-build)
 
 set(PYTHON_VENV ${CMAKE_COMMAND} -E env "LIBCLANG_PATH=${LIBCLANG_PATH}" -- ${VENV_PATH}/bin/python)
 set(PYTHON_VENV ${PYTHON_VENV} PARENT_SCOPE)

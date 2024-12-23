@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION @CMAKE_VERSION@)
+project(test)
+find_library(LIBCLANG_PATH NAMES clang PATHS @CLANG_DIR@ REQUIRED NO_CACHE)
+message(STATUS LIBCLANG_PATH=${LIBCLANG_PATH})
+file(WRITE ${CMAKE_BINARY_DIR}/libclang.path "${LIBCLANG_PATH}")

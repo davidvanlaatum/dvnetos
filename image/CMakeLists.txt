@@ -30,6 +30,7 @@ if (NOT TEST_MODE)
         INSTALL_COMMAND ""
         USES_TERMINAL_DOWNLOAD TRUE
         EXCLUDE_FROM_ALL TRUE
+        DOWNLOAD_DIR ${CMAKE_SOURCE_DIR}/.cache
     )
 
     ExternalProject_Get_Property(rpi-uefi SOURCE_DIR)
@@ -108,6 +109,7 @@ if (NOT TEST_MODE)
         DOWNLOAD_NO_EXTRACT TRUE
         DOWNLOAD_NAME ovmf-code-${ARCH}.fd
         STEP_TARGETS download
+        DOWNLOAD_DIR ${CMAKE_SOURCE_DIR}/.cache
     )
     ExternalProject_Get_Property(ovmf DOWNLOAD_DIR)
     ExternalProject_Get_Property(ovmf DOWNLOAD_NAME)
