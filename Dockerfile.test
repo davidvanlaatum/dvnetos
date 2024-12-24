@@ -7,15 +7,17 @@ URIs: https://apt.kitware.com/ubuntu/\n\
 Suites: noble\n\
 Components: main\n\
 Signed-By: /usr/share/keyrings/kitware-archive-keyring.gpg" > /etc/apt/sources.list.d/kitware.sources && cat /etc/apt/sources.list.d/kitware.sources
-#RUN echo "deb https://apt.llvm.org/noble/ llvm-toolchain-noble-19 main\n\
-#deb-src https://apt.llvm.org/noble/ llvm-toolchain-noble-19 main\n\
-#Types: deb deb-src\n\
-#URIs: https://apt.llvm.org/noble/\n\
-#Suites: llvm-toolchain-noble-19\n\
-#Components: main\n\
-#Trusted: yes\n\
-#Options: trusted=yes" > /etc/apt/sources.list.d/llvm.sources && cat /etc/apt/sources.list.d/llvm.sources
-RUN apt update && apt install -y cmake clang-18 lld-18 clang-tools-18 libclang-18-dev libc++-dev gdisk mtools git python3-venv valgrind qemu-system g++ && ln -sv /usr/lib/llvm-18/bin/ld.lld /usr/bin/ld.lld
+RUN echo "deb https://apt.llvm.org/noble/ llvm-toolchain-noble-19 main\n\
+deb-src https://apt.llvm.org/noble/ llvm-toolchain-noble-19 main\n\
+Types: deb deb-src\n\
+URIs: https://apt.llvm.org/noble/\n\
+Suites: llvm-toolchain-noble-19\n\
+Components: main\n\
+Trusted: yes\n\
+Options: trusted=yes" > /etc/apt/sources.list.d/llvm.sources && cat /etc/apt/sources.list.d/llvm.sources
+ARG CLANG_VERSION=19
+RUN apt update && apt install -y cmake clang-${CLANG_VERSION} lld-${CLANG_VERSION} clang-tools-${CLANG_VERSION} libclang-${CLANG_VERSION}-dev clang-tidy-${CLANG_VERSION} clang-format-${CLANG_VERSION} libc++-dev gdisk mtools git python3-venv valgrind qemu-system g++ && ln -sv /usr/lib/llvm-${CLANG_VERSION}/bin/ld.lld /usr/bin/ld.lld
+
 COPY . /app
 ENV CTEST_OUTPUT_ON_FAILURE=1 CMAKE_COLOR_DIAGNOSTICS=ON
 
