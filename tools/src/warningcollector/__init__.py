@@ -4,8 +4,14 @@ import json
 import os
 import re
 import select
+import html
 from typing import List, Optional
 
+
+def escape_html(s: str, escape):
+  if not escape:
+    return s
+  return html.escape(s)
 
 class WarningRec:
   def __init__(self, file, line, column, level, message):
@@ -55,16 +61,32 @@ class WarningRec:
       'notes': self.notes
     }
 
-  def to_string(self):
-    s = self.file + ':' + str(self.line) + ':' + str(self.column) + ':' + self.level + ':' + self.message
+  def get_color(self):
+    if self.level == 'error':
+      return 'red'
+    elif self.level == 'warning':
+      return 'yellow'
+    elif self.level == 'note':
+      return 'blue'
+    else:
+      return None
+
+  def to_string(self, html_color=False):
+    s = self.file + ':' + str(self.line) + ':' + str(self.column) + ':'
+    if html_color and self.get_color():
+      s += '<span style="color: ' + self.get_color() + '">'
+    s += self.level
+    if html_color and self.get_color():
+      s += '</span>'
+    s += ':' + escape_html(self.message, html_color)
     if self.count > 1:
       s += ' x' + str(self.count)
     s += '\n'
     if self.extra:
-      s += self.extra
+      s += escape_html(self.extra, html_color)
     if len(self.notes) > 0:
       for note in self.notes:
-        s += note.to_string()
+        s += note.to_string(html_color)
     return s
 
   @classmethod
@@ -112,10 +134,11 @@ class WarningCollector:
   def dump_to_markdown_file(self, file):
     if len(self.warnings) > 0:
       with open(file, 'a') as f:
-        f.write('<details><summary>' + str(len(self.warnings)) + ' Warnings</summary>\n\n```\n')
+        md = '<details><summary>' + str(len(self.warnings)) + ' Warnings</summary>\n\n<pre>\n'
         for w in self.warnings:
-          f.write(w.to_string() + "\n")
-        f.write('````\n</details>')
+          md += w.to_string(True)
+        md = md.strip() + '</pre>\n</details>'
+        f.write(md)
       print('Written to', file)
 
   def merge(self, other: 'WarningCollector'):
