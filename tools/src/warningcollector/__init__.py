@@ -72,21 +72,28 @@ class WarningRec:
       return None
 
   def to_string(self, html_color=False):
-    s = self.file + ':' + str(self.line) + ':' + str(self.column) + ':'
+    s = ''
+    if html_color and not self.is_note():
+      s += '<details><summary>'
+    s += self.file + ':' + str(self.line) + ':' + str(self.column) + ':'
     if html_color and self.get_color():
       s += '<span style="color: ' + self.get_color() + '">'
     s += self.level
     if html_color and self.get_color():
       s += '</span>'
-    s += ':' + escape_html(self.message, html_color)
+    s += ': ' + escape_html(self.message, html_color)
     if self.count > 1:
       s += ' x' + str(self.count)
+    if html_color and not self.is_note():
+      s += '</summary>'
     s += '\n'
     if self.extra:
       s += escape_html(self.extra, html_color)
     if len(self.notes) > 0:
       for note in self.notes:
         s += note.to_string(html_color)
+    if html_color and not self.is_note():
+      s += '</details>'
     return s
 
   @classmethod
@@ -134,12 +141,16 @@ class WarningCollector:
   def dump_to_markdown_file(self, file):
     if len(self.warnings) > 0:
       with open(file, 'a') as f:
-        md = '<details><summary>' + str(len(self.warnings)) + ' Warnings</summary>\n\n<pre>\n'
+        md = str(len(self.warnings)) + ' Warnings\n\n<pre>\n'
         for w in self.warnings:
           md += w.to_string(True)
         md = md.strip() + '</pre>\n</details>'
         f.write(md)
       print('Written to', file)
+
+  def dump_to_console(self):
+    for w in self.warnings:
+      print(w.to_string())
 
   def merge(self, other: 'WarningCollector'):
     for w in other.warnings:
@@ -232,6 +243,7 @@ class ReportGenerator:
     print(len(self.collector.warnings), 'warnings')
     if os.getenv('GITHUB_STEP_SUMMARY'):
       self.collector.dump_to_markdown_file(os.getenv('GITHUB_STEP_SUMMARY'))
+    # self.collector.dump_to_console()
 
 
 def main():
