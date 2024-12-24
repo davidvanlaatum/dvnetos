@@ -22,7 +22,7 @@ ExternalProject_Add(
     venv
     DOWNLOAD_COMMAND ""
     CONFIGURE_COMMAND ${Python_EXECUTABLE} -m venv .
-    BUILD_COMMAND bin/pip install clang lcov_cobertura setuptools qemu.qmp
+    BUILD_COMMAND bin/pip install --editable ${CMAKE_CURRENT_SOURCE_DIR}
     INSTALL_COMMAND ""
     EXCLUDE_FROM_ALL TRUE
 )
@@ -51,7 +51,9 @@ endif ()
 file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/libclang-find)
 file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/libclang-find-build)
 
-set(PYTHON_VENV ${CMAKE_COMMAND} -E env "LIBCLANG_PATH=${LIBCLANG_PATH}" -- ${VENV_PATH}/bin/python)
+set(PYTHON_VENV_BIN ${VENV_PATH}/bin/)
+set(WARNING_COLLECTOR_COMMAND ${PYTHON_VENV_BIN}/warningcollector PARENT_SCOPE)
+set(PYTHON_VENV ${CMAKE_COMMAND} -E env "LIBCLANG_PATH=${LIBCLANG_PATH}" -- ${PYTHON_VENV_BIN}/python)
 set(PYTHON_VENV ${PYTHON_VENV} PARENT_SCOPE)
 set(ENUM2STRING ${CMAKE_CURRENT_SOURCE_DIR}/enumToString.py PARENT_SCOPE)
 set(LCOV_COBERTURA_PATH ${VENV_PATH}/bin/lcov_cobertura PARENT_SCOPE)

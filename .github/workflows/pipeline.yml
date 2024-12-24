@@ -26,6 +26,8 @@ jobs:
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DTEST_MODE=ON -DCMAKE_VERBOSE_MAKEFILE=ON -G Ninja
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -- -j$(nproc)
+      - name: Warning Summary
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target warnings-report
       - name: Test MemCheck
         working-directory: ${{github.workspace}}/build
         run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure --test-action memcheck --output-junit junit.xml
@@ -86,6 +88,8 @@ jobs:
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target image -- -j$(nproc)
       - name: Build OVMF
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target ovmf -- -j$(nproc)
+      - name: Warning Summary
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target warnings-report
       - name: Test
         working-directory: ${{github.workspace}}/build
         run: ctest --output-on-failure --output-junit junit.xml

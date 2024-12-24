@@ -44,3 +44,9 @@ Temporary Items
 .apdisk
 cmake-build-*
 .cache
+/tools/src/dvnetos_tools.egg-info/dependency_links.txt
+/tools/src/dvnetos_tools.egg-info/entry_points.txt
+/tools/src/dvnetos_tools.egg-info/PKG-INFO
+/tools/src/dvnetos_tools.egg-info/requires.txt
+/tools/src/dvnetos_tools.egg-info/SOURCES.txt
+/tools/src/dvnetos_tools.egg-info/top_level.txt

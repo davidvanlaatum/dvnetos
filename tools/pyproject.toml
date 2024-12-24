@@ -1,0 +1,16 @@
+[project]
+name = "dvnetos-tools"
+version = "0.0.1"
+dependencies = [
+  "clang",
+  "lcov_cobertura",
+  "setuptools",
+  "qemu.qmp"
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project.scripts]
+warningcollector = "warningcollector:main"
