@@ -116,6 +116,7 @@ class WarningCollector:
         for w in self.warnings:
           f.write(w.to_string() + "\n")
         f.write('````\n</details>')
+      print('Written to', file)
 
   def merge(self, other: 'WarningCollector'):
     for w in other.warnings:
@@ -205,6 +206,7 @@ class ReportGenerator:
           pass
 
   def write_report(self):
+    print(len(self.collector.warnings), 'warnings')
     if os.getenv('GITHUB_STEP_SUMMARY'):
       self.collector.dump_to_markdown_file(os.getenv('GITHUB_STEP_SUMMARY'))
 
@@ -212,7 +214,6 @@ class ReportGenerator:
 def main():
   if len(sys.argv) > 1 and sys.argv[1] == 'report':
     report = ReportGenerator()
-    print('reading', sys.argv[2])
     report.load_from_list(sys.argv[2])
     report.write_report()
   elif len(sys.argv) > 1:
